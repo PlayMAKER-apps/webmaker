@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/PlayMAKER-apps/webmaker/blob/main/shared/site-0.1.schema.json",
+  "title": "WebMAKER club configuration 0.1",
+  "type": "object",
+  "required": ["schema_version", "name", "language", "timezone", "site_url", "theme", "sport", "colors"],
+  "properties": {
+    "schema_version": { "const": "0.1" },
+    "name": { "type": "string", "minLength": 1 },
+    "short_name": { "type": "string" },
+    "tagline": { "type": "string" },
+    "description": { "type": "string" },
+    "language": { "type": "string", "minLength": 2 },
+    "timezone": { "type": "string", "minLength": 1 },
+    "site_url": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "repository_url": { "type": "string" },
+    "base_path": { "type": "string" },
+    "theme": { "enum": ["bold", "classic", "dynamic"] },
+    "sport": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "logo": { "type": "string" },
+    "hero_image": { "type": "string" },
+    "colors": { "type": "object", "required": ["primary", "accent"], "properties": { "primary": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }, "accent": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" } } },
+    "fonts": { "type": "object", "properties": { "heading": { "enum": ["auto", "sans", "serif", "display"] }, "body": { "enum": ["sans", "serif"] } } },
+    "contacts": { "type": "object" },
+    "social": { "type": "object" }
+  },
+  "additionalProperties": true
+}

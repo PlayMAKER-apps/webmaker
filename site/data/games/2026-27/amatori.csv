@@ -1,0 +1,3 @@
+id,date,time,status,home_team,away_team,home_score,away_score,venue,address,instagram_url,youtube_url,notes,phase,round
+demo-01,2026-09-20,18:00,final,aurora,stella,78,72,Palazzetto Aurora,,,,,regular-season,1
+demo-02,2026-11-08,18:00,scheduled,vento,aurora,,,Centro sportivo Vento,,,,,regular-season,2

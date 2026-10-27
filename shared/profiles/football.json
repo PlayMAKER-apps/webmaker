@@ -1,0 +1,1 @@
+{"id":"football","name":"Calcio","scoreLabel":"Gol","periods":["1° tempo","2° tempo"],"stats":[{"key":"goals","label":"Gol"},{"key":"assists","label":"Assist"},{"key":"yellow_cards","label":"Ammonizioni"},{"key":"red_cards","label":"Espulsioni"}]}

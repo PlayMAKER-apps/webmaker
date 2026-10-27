@@ -1,0 +1,3 @@
+game_id,player_id,minutes,points,three_pointers_made,two_pointers_made,free_throws_made,fouls,rebounds_off,rebounds_def,assists,turnovers
+demo-01,alex-riva,25:00,18,2,5,2,2,1,4,3,1
+demo-01,sam-neri,20:00,12,1,3,3,1,2,3,2,2

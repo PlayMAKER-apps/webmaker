@@ -1,0 +1,11 @@
+node_modules/
+.npm-cache/
+dist/
+target/
+site/dist/
+studio/dist/
+studio/src-tauri/target/
+studio/src-tauri/gen/
+*.tsbuildinfo
+.DS_Store
+desktop.ini

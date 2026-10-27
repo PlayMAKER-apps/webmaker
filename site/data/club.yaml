@@ -1,0 +1,25 @@
+schema_version: '0.1'
+name: Aurora Sport Club
+short_name: Aurora
+tagline: La nostra storia, ogni stagione
+description: Notizie, squadre, calendario e risultati di Aurora Sport Club.
+language: it
+timezone: Europe/Rome
+site_url: https://example.github.io/
+repository_url: ''
+base_path: ''
+theme: bold
+sport: basketball
+logo: ''
+hero_image: ''
+colors:
+  primary: '#153a7a'
+  accent: '#f6c84c'
+fonts:
+  heading: auto
+  body: sans
+contacts:
+  email: info@example.org
+social:
+  instagram: ''
+  youtube: ''

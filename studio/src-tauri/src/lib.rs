@@ -1,6 +1,7 @@
 mod backup;
 mod project;
 mod publish;
+mod setup;
 mod storage;
 mod validation;
 
@@ -10,6 +11,7 @@ pub fn run() {
         .manage(project::ProjectState::default())
         .invoke_handler(tauri::generate_handler![
             project::open_project, project::project_info, project::sync_project, project::list_files, project::catalog,
+            setup::connect_github, setup::create_club, setup::clone_club,
             storage::read_project_file, storage::write_project_file,
             storage::save_draft, storage::read_draft, storage::clear_draft,
             storage::preview_image, storage::import_media, storage::read_external_csv,

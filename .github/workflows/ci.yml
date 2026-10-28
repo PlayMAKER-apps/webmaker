@@ -1,0 +1,78 @@
+name: Validate WebMAKER
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 7 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+        working-directory: site
+      - run: npm test
+        working-directory: site
+      - run: npm run build
+        working-directory: site
+      - run: npm audit --audit-level=high
+        working-directory: site
+
+  responsive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+        working-directory: site
+      - run: npx playwright install --with-deps chromium
+        working-directory: site
+      - run: npm run test:browser
+        working-directory: site
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: webmaker-responsive-report
+          path: |
+            site/playwright-report/
+            site/test-results/
+          retention-days: 14
+
+  studio:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: studio/package-lock.json
+      - run: npm ci
+        working-directory: studio
+      - run: npm test
+        working-directory: studio
+      - run: npm run build
+        working-directory: studio
+      - run: cargo test --locked --manifest-path studio/src-tauri/Cargo.toml
+      - run: npm audit --audit-level=high
+        working-directory: studio
+
+  rust-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo install cargo-audit --locked
+      - run: cargo audit --file studio/src-tauri/Cargo.lock

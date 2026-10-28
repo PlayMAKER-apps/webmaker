@@ -1,0 +1,20 @@
+{
+  "theme": "theme-dynamic",
+  "title": "Home · Aurora Sport Club",
+  "heading": "Aurora Sport Club",
+  "canonical": "https://example.github.io/",
+  "navigation": [
+    "Home",
+    "Club",
+    "Schedule",
+    "Competitions",
+    "Roster",
+    "News"
+  ],
+  "desktopNavVisible": false,
+  "mobileNavVisible": true,
+  "gridColumns": 2,
+  "horizontalOverflow": false,
+  "imagesMissingAlt": 0,
+  "unnamedLinks": 0
+}

@@ -255,4 +255,25 @@ mod tests {
         assert!(root.starts_with(std::env::temp_dir().canonicalize().unwrap()));
         fs::remove_dir_all(root).unwrap();
     }
+    #[test]
+    fn saves_results_roster_and_news_without_touching_other_files() {
+        let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("target/test-fixtures");
+        fs::create_dir_all(&fixtures).unwrap();
+        let temp = fixtures.join(format!("webmaker-content-{}", Uuid::new_v4()));
+        fs::create_dir_all(temp.join("site/data/games/2026-27")).unwrap();
+        fs::create_dir_all(temp.join("site/content/news")).unwrap();
+        let root = temp.canonicalize().unwrap();
+        let content = [
+            ("site/data/games/2026-27/league.csv", "id,date,home_score,away_score\ngame-1,2026-10-21,52,48\n"),
+            ("site/data/rosters.csv", "season,competition,team_id,player_id,number\n2026-27,league,aurora,player,7\n"),
+            ("site/content/news/sample.md", "---\ntitle: Match report\ndate: 2026-10-21\n---\nAurora won.\n"),
+        ];
+        for (path, value) in content {
+            write_for_root(&root, path, value, "").unwrap();
+            assert_eq!(fs::read_to_string(root.join(path)).unwrap(), value);
+        }
+        assert!(!root.join("site/data/teams.yaml").exists());
+        assert!(root.starts_with(fixtures.canonicalize().unwrap()));
+        fs::remove_dir_all(root).unwrap();
+    }
 }

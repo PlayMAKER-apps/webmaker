@@ -76,7 +76,7 @@ pub fn validate(root: &Path) -> ValidationReport {
             let mut season_ids = HashSet::new();
             if let Some(seasons) = config.get("seasons").and_then(Value::as_sequence) {
                 for season in seasons {
-                    let Some(season_id) = field(season, "id") else { report.errors.push("Stagione senza ID in competitions.yaml.".into()); continue; };
+                    let Some(season_id) = field(season, "id") else { report.errors.push("Season is missing an ID in competitions.yaml.".into()); continue; };
                     if !season_ids.insert(season_id.to_string()) { report.errors.push(format!("Duplicate season: {season_id}.")); }
                     if season_id.len() != 7 || !season_id.chars().enumerate().all(|(index, ch)| if index == 4 { ch == '-' } else { ch.is_ascii_digit() }) {
                         report.errors.push(format!("Invalid season ID: {season_id}."));

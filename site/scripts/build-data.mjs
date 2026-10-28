@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync, cpSync
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
+import { validateSportProfile, sumProfileStat } from './sport-profile.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const data = join(root, 'data');
@@ -17,7 +18,7 @@ const sport = process.env.WEBMAKER_SPORT ?? club.sport;
 if (!/^[a-z0-9-]+$/.test(sport)) error('Invalid sport ID');
 const profilePath = resolve(root, '..', 'shared', 'profiles', `${sport}.json`);
 const profile = existsSync(profilePath) ? JSON.parse(readFileSync(profilePath, 'utf8')) : null;
-const required = (value, label) => value || error(`${label} mancante`);
+const required = (value, label) => value || error(`${label} is missing`);
 if (club.schema_version !== '0.1') error('Unsupported schema version');
 if (!['bold', 'classic', 'dynamic'].includes(theme)) error('Invalid theme');
 const siteUrl = process.env.SITE_URL ?? club.site_url;
@@ -29,6 +30,7 @@ if (!((club.fonts?.heading ?? 'auto') in headingFonts) || !((club.fonts?.body ??
 const fontStyle=`${headingFonts[club.fonts?.heading??'auto']?`--heading-font:${headingFonts[club.fonts.heading]};`:''}--body-font:${bodyFonts[club.fonts?.body??'sans']};`;
 required(club.name, 'Club name'); required(club.language, 'Language'); required(club.timezone, 'Time zone');
 if (!profile) error(`Sport profile ${sport} not found`);
+validateSportProfile(profile, sport);
 const base = process.env.BASE_PATH ?? club.base_path ?? '';
 if (base && !/^\/[a-zA-Z0-9/_-]+$/.test(base)) error('Invalid BASE_PATH');
 const path = (slug = '/') => `${base}${slug === '/' ? '/' : slug.startsWith('/') ? slug : `/${slug}`}`;
@@ -86,7 +88,7 @@ add('/competitions/','Competitions','Competitions and standings',`<section class
 for(const s of seasons)for(const c of s.competitions){const key=`${s.id}/${c.id}`; const table=standings.get(key)||[];add(`/competition/${s.id}/${c.id}/`,c.name,`Results and standings ${s.id}`,`<section class="page-hero"><div class="container"><span class="kicker">${esc(s.id)}</span><h1>${esc(c.name)}</h1></div></section>`+section('Standings',table.length?`<div class="table-wrap"><table><thead><tr><th>Team</th><th>Played</th><th>Won</th><th>Lost</th><th>${esc(profile.scoreLabel)}</th></tr></thead><tbody>${table.map((r)=>`<tr><th>${esc(teams[r.id]?.name||r.id)}</th><td>${r.played}</td><td>${r.wins}</td><td>${r.losses}</td><td>${r.points}</td></tr>`).join('')}</tbody></table></div>`:'<p>Standings will appear after the first results.</p>')+section('Games',`<div class="card-grid">${games.filter((g)=>g.season===s.id&&g.competition===c.id).map(gameCard).join('')}</div>`));}
 add('/roster/','Roster','Teams and players',`<section class="page-hero"><div class="container"><h1>Roster</h1></div></section>`+section('Teams',`<div class="card-grid">${homeTeams.map(teamCard).join('')}</div>`));
 for(const id of homeTeams){const roster=memberships.filter((r)=>r.team_id===id&&r.season===current.id);add(`/roster/${id}/`,teams[id].name,`Roster of ${teams[id].name}`,`<section class="page-hero"><div class="container"><span class="kicker">Roster ${esc(current.id)}</span><h1>${esc(teams[id].name)}</h1></div></section>`+section('Players',`<div class="card-grid">${roster.length?roster.map((r)=>{const p=players.find((x)=>x.id===r.player_id);return `<article class="player-card"><span class="number">${esc(r.number)}</span><h3>${esc(p?.name||r.player_id)}</h3><p>${esc(r.role)}</p>${link(`/players/${r.player_id}/`,'Profile →')}</article>`}).join(''):'<p>Roster coming soon.</p>'}</div>`));}
-for(const p of players){const totals=stats.filter((s)=>s.player_id===p.id);add(`/players/${p.id}/`,p.name,`Profile of ${p.name}`,`<section class="page-hero"><div class="container"><span class="kicker">Player</span><h1>${esc(p.name)}</h1><p>${esc(p.bio||'')}</p></div></section>`+section('Statistics',totals.length?`<div class="stat-grid">${profile.stats.map((s)=>`<div><strong>${totals.reduce((sum,r)=>sum+Number(r[s.key]||0),0)}</strong><span>${esc(s.label)}</span></div>`).join('')}</div>`:'<p>Statistics are not available yet.</p>'));}
+for(const p of players){const totals=stats.filter((s)=>s.player_id===p.id);add(`/players/${p.id}/`,p.name,`Profile of ${p.name}`,`<section class="page-hero"><div class="container"><span class="kicker">Player</span><h1>${esc(p.name)}</h1><p>${esc(p.bio||'')}</p></div></section>`+section('Statistics',totals.length?`<div class="stat-grid">${profile.stats.map((s)=>`<div><strong>${sumProfileStat(totals,s.key)}</strong><span>${esc(s.label)}</span></div>`).join('')}</div>`:'<p>Statistics are not available yet.</p>'));}
 add('/news/','News','Club news',`<section class="page-hero"><div class="container"><h1>News</h1></div></section>`+section('Latest articles',`<div class="card-grid">${news.length?news.map(newsCard).join(''):'<p>No articles have been published yet.</p>'}</div>`));
 for(const n of news)add(`/news/${n.slug}/`,n.title,n.excerpt,`<article class="article container"><span class="kicker">${esc(n.date)}</span><h1>${esc(n.title)}</h1><p class="lead">${esc(n.excerpt||'')}</p>${n.body.split(/\n\n+/).map((p)=>`<p>${esc(p)}</p>`).join('')}</article>`);
 for(const g of games)add(`/games/${g.id}/`,`${label(g.home_team)} – ${label(g.away_team)}`,'Game details',`<section class="page-hero"><div class="container"><span class="kicker">${esc(g.date)} · ${esc(g.competition)}</span><h1>${esc(label(g.home_team))} ${g.status==='final'?`${esc(g.home_score)} – ${esc(g.away_score)}`:'vs'} ${esc(label(g.away_team))}</h1><p>${esc(g.venue||'Venue to be confirmed')}</p></div></section>`+section('Details',`<p>${esc(g.notes||'Details coming soon.')}</p>`));

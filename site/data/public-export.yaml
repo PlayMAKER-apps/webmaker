@@ -1,0 +1,7 @@
+enabled: true
+club_id: aurora-club
+publish_on_build: false
+include_players: false
+player_ids: []
+include_stats: false
+sponsors: []

@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync, cpSync
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
+import { writePublicClub } from './export-public-club.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const data = join(root, 'data');
@@ -99,5 +100,8 @@ const urls=[...pages.keys()].map((slug)=>`  <url><loc>${esc(canonical(slug))}</l
 writeFileSync(join(out,'sitemap.xml'),`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
 writeFileSync(join(out,'robots.txt'),`User-agent: *\nAllow: /\nSitemap: ${canonical('/sitemap.xml')}\n`);
 writeFileSync(join(out,'.nojekyll'),'');
+const publicExportSettings = readYaml(join(data, 'public-export.yaml'));
+const publishClubJson = process.env.WEBMAKER_PUBLISH_CLUB_JSON === '1' || (process.env.WEBMAKER_PUBLISH_CLUB_JSON !== '0' && publicExportSettings.enabled === true && publicExportSettings.publish_on_build === true);
+if (publishClubJson) writePublicClub(join(out, 'data', 'playmaker-club-0.1.json'), { siteRoot: root, basePath: base, siteUrl });
 console.log(`WebMAKER: ${pages.size} pages, ${games.length} games, ${players.length} players, theme ${theme}.`);
 

@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "node scripts/build-data.mjs",
+    "export:club": "node scripts/export-public-club.mjs",
     "dev": "node scripts/serve.mjs",
     "test": "node --test tests/*.test.mjs"
   },

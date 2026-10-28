@@ -1,0 +1,27 @@
+name: Validate WebMAKER
+on:
+  pull_request:
+jobs:
+  site-and-studio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            site/package-lock.json
+            studio/package-lock.json
+      - run: npm ci
+        working-directory: site
+      - run: npm test
+        working-directory: site
+      - run: npm run build
+        working-directory: site
+      - run: npm ci
+        working-directory: studio
+      - run: npm test
+        working-directory: studio
+      - run: npm run build
+        working-directory: studio

@@ -24,6 +24,17 @@ Open `my-club/site/data/club.yaml`. Set the name, tagline, description, contact 
 
 Set `sport: basketball` or `football`, or add a structured profile under `shared/profiles/`. WebMAKER keeps `site/data/teams.yaml`, `site/data/players/*.yaml`, and `site/data/rosters.csv` for TagMAKER roster imports. Per-game statistics CSV files are separate from TagMAKER's event JSON export.
 
+### Export public club data to PostMAKER
+
+Review `site/data/public-export.yaml` before sharing anything. It explicitly selects the club ID, whether players and stats may be included, individual public player IDs, and licensed sponsor assets. Contacts, private fields, article content, notes, and social links are never exported. To save a JSON file manually:
+
+```bash
+cd site
+npm run export:club -- --out ./public-club.json
+```
+
+The file follows the separate [public club 0.1 contract](https://github.com/PlayMAKER-apps/playmaker-schema/blob/main/club-public-0.1.schema.json). It can be imported into PostMAKER without changing the site's CSV or YAML formats. To publish it at `/data/playmaker-club-0.1.json` during a site build, set `publish_on_build: true` in `public-export.yaml` or use `WEBMAKER_PUBLISH_CLUB_JSON=1`. Set `WEBMAKER_PUBLISH_CLUB_JSON=0` to force it off. On GitHub Pages, the URL includes the site's `base_path`; exported image URLs include the same path. Publishing is optional and disabled in the starter data.
+
 ![Illustration of the WebMAKER Studio editing workflow](docs/images/02-studio.svg)
 
 An AI coding agent can help with customization. Give it `site/data/club.yaml`, the fictional CSV/YAML examples, and the [configuration schema](shared/site-0.1.schema.json). Ask it to change content or theme settings, review its diff, then run `npm test` and `npm run build`. Keep private player information, minors' photos, credentials, and unlicensed content out of prompts. For layout changes or a new sport, work on a separate branch and check every page.

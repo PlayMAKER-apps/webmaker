@@ -25,8 +25,8 @@ pub fn configured_remote(root: &Path, remote: &str) -> bool {
 
 pub fn club_urls(root: &Path) -> Result<(String, String), String> {
     let club: serde_yaml::Value = serde_yaml::from_str(&fs::read_to_string(root.join("site/data/club.yaml")).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
-    let repo = club.get("repository_url").and_then(serde_yaml::Value::as_str).and_then(normalize_remote).ok_or("Configura repository_url in site/data/club.yaml")?;
-    let site = club.get("site_url").and_then(serde_yaml::Value::as_str).filter(|s| s.starts_with("https://")).ok_or("Configura site_url HTTPS in site/data/club.yaml")?;
+    let repo = club.get("repository_url").and_then(serde_yaml::Value::as_str).and_then(normalize_remote).ok_or("Set repository_url in site/data/club.yaml")?;
+    let site = club.get("site_url").and_then(serde_yaml::Value::as_str).filter(|s| s.starts_with("https://")).ok_or("Set an HTTPS site_url in site/data/club.yaml")?;
     Ok((repo, site.to_string()))
 }
 
@@ -49,7 +49,7 @@ pub fn git(root: &Path, args: &[&str]) -> Result<String, String> {
 
 fn git_bytes(root: &Path, args: &[&str]) -> Result<Vec<u8>, String> {
     let output = Command::new("git").args(args).current_dir(root).output()
-        .map_err(|error| format!("Git non disponibile: {error}. Installa Git for Windows."))?;
+        .map_err(|error| format!("Git is unavailable: {error}. Install Git for Windows."))?;
     if !output.status.success() {
         return Err(format!("Git {}: {}", args.first().unwrap_or(&""), String::from_utf8_lossy(&output.stderr).trim()));
     }
@@ -57,42 +57,42 @@ fn git_bytes(root: &Path, args: &[&str]) -> Result<Vec<u8>, String> {
 }
 
 pub fn validate_root(path: &str) -> Result<PathBuf, String> {
-    let root = fs::canonicalize(path).map_err(|_| "Cartella non accessibile.".to_string())?;
+    let root = fs::canonicalize(path).map_err(|_| "Folder is inaccessible.".to_string())?;
     if !root.join(".git").exists() || !root.join("site/data/competitions.yaml").is_file()
         || !root.join("site/scripts/build-data.mjs").is_file()
         || !root.join("site/content/news").is_dir() || !root.join("site/data/club.yaml").is_file() {
-        return Err("Scegli la root Git di un progetto WebMAKER con site/data/club.yaml.".into());
+        return Err("Choose the Git root of a WebMAKER project containing site/data/club.yaml.".into());
     }
     let top = git(&root, &["rev-parse", "--show-toplevel"])?;
-    if fs::canonicalize(top).map_err(|_| "Repository non valido.".to_string())? != root {
-        return Err("La cartella scelta non è la root Git del progetto.".into());
+    if fs::canonicalize(top).map_err(|_| "Invalid repository.".to_string())? != root {
+        return Err("The selected folder is not the project's Git root.".into());
     }
     let probe = root.join("site/data").join(format!(".webmaker-{}", Uuid::new_v4()));
     OpenOptions::new().write(true).create_new(true).open(&probe)
-        .map_err(|error| format!("La cartella dati non è scrivibile: {error}"))?;
-    fs::remove_file(&probe).map_err(|error| format!("Test scrittura non ripulito: {error}"))?;
+        .map_err(|error| format!("The data folder is not writable: {error}"))?;
+    fs::remove_file(&probe).map_err(|error| format!("Could not remove the write test file: {error}"))?;
     Ok(root)
 }
 
 pub fn root(state: &ProjectState) -> Result<PathBuf, String> {
-    state.0.lock().map_err(|_| "Stato progetto non disponibile.".to_string())?
-        .clone().ok_or_else(|| "Apri prima un progetto WebMAKER.".to_string())
+    state.0.lock().map_err(|_| "Project state is unavailable.".to_string())?
+        .clone().ok_or_else(|| "Open a WebMAKER project first.".to_string())
 }
 
 pub fn relative_path(root: &Path, relative: &str) -> Result<PathBuf, String> {
     let normalized = relative.replace('\\', "/");
     let path = Path::new(&normalized);
     if path.is_absolute() || path.components().any(|part| !matches!(part, Component::Normal(_))) {
-        return Err("Percorso non valido.".into());
+        return Err("Invalid path.".into());
     }
     let allowed = normalized.starts_with("site/data/") || normalized.starts_with("site/content/news/")
         || normalized.starts_with("site/public/assets/");
-    if !allowed || normalized.contains(':') { return Err("Percorso fuori dalle cartelle dati consentite.".into()); }
+    if !allowed || normalized.contains(':') { return Err("Path is outside the allowed data folders.".into()); }
     let target = root.join(path);
     let mut ancestor = target.as_path();
-    while !ancestor.exists() { ancestor = ancestor.parent().ok_or("Percorso non valido.")?; }
-    let canonical = fs::canonicalize(ancestor).map_err(|_| "Percorso non accessibile.".to_string())?;
-    if !canonical.starts_with(root) { return Err("Percorso simbolico fuori dal progetto.".into()); }
+    while !ancestor.exists() { ancestor = ancestor.parent().ok_or("Invalid path.")?; }
+    let canonical = fs::canonicalize(ancestor).map_err(|_| "Path is inaccessible.".to_string())?;
+    if !canonical.starts_with(root) { return Err("Symbolic path points outside the project.".into()); }
     Ok(target)
 }
 
@@ -130,7 +130,7 @@ pub fn info(root: &Path) -> Result<ProjectInfo, String> {
 pub fn open_project(path: String, state: tauri::State<'_, ProjectState>) -> Result<ProjectInfo, String> {
     let root = validate_root(&path)?;
     let info = info(&root)?;
-    *state.0.lock().map_err(|_| "Stato progetto non disponibile.".to_string())? = Some(root);
+    *state.0.lock().map_err(|_| "Project state is unavailable.".to_string())? = Some(root);
     Ok(info)
 }
 
@@ -140,7 +140,7 @@ pub fn project_info(state: tauri::State<'_, ProjectState>) -> Result<ProjectInfo
 #[tauri::command]
 pub fn sync_project(state: tauri::State<'_, ProjectState>) -> Result<ProjectInfo, String> {
     let root = root(&state)?;
-    if !configured_remote(&root, &git(&root, &["remote", "get-url", "origin"])?) { return Err("Origin non coincide con repository_url del club.".into()); }
+    if !configured_remote(&root, &git(&root, &["remote", "get-url", "origin"])?) { return Err("Origin does not match the club's repository_url.".into()); }
     git(&root, &["fetch", "origin", "main"])?;
     info(&root)
 }
@@ -150,12 +150,12 @@ pub fn list_files(kind: String, state: tauri::State<'_, ProjectState>) -> Result
     let root = root(&state)?;
     let prefix = match kind.as_str() {
         "games" => "site/data/games", "stats" => "site/data/player-stats", "players" => "site/data/players",
-        "news" => "site/content/news", "teams" => "site/data", _ => return Err("Tipo elenco non supportato.".into()),
+        "news" => "site/content/news", "teams" => "site/data", _ => return Err("Unsupported list type.".into()),
     };
     let mut files = Vec::new();
     for entry in walkdir::WalkDir::new(root.join(prefix)).into_iter().filter_map(Result::ok) {
         if !entry.file_type().is_file() { continue; }
-        let relative = entry.path().strip_prefix(&root).map_err(|_| "Percorso non valido.")?.to_string_lossy().replace('\\', "/");
+        let relative = entry.path().strip_prefix(&root).map_err(|_| "Invalid path.")?.to_string_lossy().replace('\\', "/");
         if relative.rsplit('/').next().unwrap_or("").starts_with('_') || !editable(&relative) { continue; }
         if kind == "teams" && relative != "site/data/teams.yaml" && relative != "site/data/rosters.csv" { continue; }
         files.push(relative);
@@ -170,7 +170,7 @@ pub fn list_files(kind: String, state: tauri::State<'_, ProjectState>) -> Result
 
 fn configured_archive_paths(root: &Path, kind: &str) -> Result<Vec<String>, String> {
     let source = fs::read_to_string(root.join("site/data/competitions.yaml")).map_err(|error| error.to_string())?;
-    let config: serde_yaml::Value = serde_yaml::from_str(&source).map_err(|error| format!("Campionati YAML non validi: {error}"))?;
+    let config: serde_yaml::Value = serde_yaml::from_str(&source).map_err(|error| format!("Invalid competitions YAML: {error}"))?;
     let folder = if kind == "games" { "games" } else { "player-stats" };
     let mut paths = Vec::new();
     for season in config.get("seasons").and_then(serde_yaml::Value::as_sequence).into_iter().flatten() {
@@ -196,8 +196,8 @@ pub fn catalog(state: tauri::State<'_, ProjectState>) -> Result<Catalog, String>
 
 fn catalog_for_root(root: &Path) -> Result<Catalog, String> {
     let yaml = fs::read_to_string(root.join("site/data/teams.yaml")).map_err(|error| error.to_string())?;
-    let teams_value: serde_yaml::Value = serde_yaml::from_str(&yaml).map_err(|error| format!("Squadre YAML non valide: {error}"))?;
-    let teams = teams_value.as_mapping().ok_or("Squadre YAML non valide.")?.keys().filter_map(serde_yaml::Value::as_str).map(str::to_string).collect();
+    let teams_value: serde_yaml::Value = serde_yaml::from_str(&yaml).map_err(|error| format!("Invalid teams YAML: {error}"))?;
+    let teams = teams_value.as_mapping().ok_or("Invalid teams YAML.")?.keys().filter_map(serde_yaml::Value::as_str).map(str::to_string).collect();
     let mut players = Vec::new();
     for entry in walkdir::WalkDir::new(root.join("site/data/players")).max_depth(1).into_iter().filter_map(Result::ok) {
         if !entry.file_type().is_file() || entry.file_name().to_string_lossy().starts_with('_') { continue; }
@@ -212,10 +212,10 @@ fn catalog_for_root(root: &Path) -> Result<Catalog, String> {
         // Older season files omit trailing empty cells; match the site's CSV reader.
         let mut reader = csv::ReaderBuilder::new().flexible(true).from_path(entry.path()).map_err(|error| error.to_string())?;
         let headers = reader.headers().map_err(|error| error.to_string())?.clone();
-        let id_col = headers.iter().position(|header| header == "id").ok_or("CSV partite senza colonna id.")?;
+        let id_col = headers.iter().position(|header| header == "id").ok_or("Games CSV is missing the id column.")?;
         for row in reader.records() {
             let row = row.map_err(|error| error.to_string())?;
-            if row.len() > headers.len() { return Err(format!("CSV partite con colonne extra: {}", entry.path().display())); }
+            if row.len() > headers.len() { return Err(format!("Games CSV has extra columns: {}", entry.path().display())); }
             games.push(row.get(id_col).unwrap_or("").to_string());
         }
     }

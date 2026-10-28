@@ -8,26 +8,26 @@ import { addCompetition, addSeason, addTeam, editCompetition, editYaml, parseNew
 
 type Section = 'dashboard' | 'branding' | 'games' | 'teams' | 'competitions' | 'players' | 'rosters' | 'stats' | 'news' | 'media' | 'backup' | 'publish';
 const sections: { id: Section; label: string; group: string }[] = [
-  { id: 'dashboard', label: 'Panoramica', group: 'Studio' },
-  { id: 'branding', label: 'Club e tema', group: 'Studio' },
-  { id: 'games', label: 'Partite', group: 'Contenuti' },
-  { id: 'teams', label: 'Squadre', group: 'Contenuti' },
-  { id: 'competitions', label: 'Campionati', group: 'Contenuti' },
-  { id: 'players', label: 'Giocatori', group: 'Contenuti' },
-  { id: 'rosters', label: 'Roster', group: 'Contenuti' },
-  { id: 'stats', label: 'Statistiche', group: 'Contenuti' },
-  { id: 'news', label: 'Notizie', group: 'Contenuti' },
-  { id: 'media', label: 'Immagini', group: 'Strumenti' },
-  { id: 'backup', label: 'Backup', group: 'Strumenti' },
-  { id: 'publish', label: 'Pubblica', group: 'Strumenti' },
+  { id: 'dashboard', label: 'Overview', group: 'Studio' },
+  { id: 'branding', label: 'Club & theme', group: 'Studio' },
+  { id: 'games', label: 'Games', group: 'Content' },
+  { id: 'teams', label: 'Teams', group: 'Content' },
+  { id: 'competitions', label: 'Competitions', group: 'Content' },
+  { id: 'players', label: 'Players', group: 'Content' },
+  { id: 'rosters', label: 'Roster', group: 'Content' },
+  { id: 'stats', label: 'Statistics', group: 'Content' },
+  { id: 'news', label: 'News', group: 'Content' },
+  { id: 'media', label: 'Images', group: 'Tools' },
+  { id: 'backup', label: 'Backup', group: 'Tools' },
+  { id: 'publish', label: 'Publish', group: 'Tools' },
 ];
 const fieldLabels: Record<string, string> = {
-  id: 'ID stabile', date: 'Data', time: 'Ora', status: 'Stato', home_team: 'Squadra casa', away_team: 'Squadra ospite',
-  home_score: 'Punti casa', away_score: 'Punti ospite', venue: 'Campo', address: 'Indirizzo', instagram_url: 'Post Instagram', youtube_url: 'Video YouTube',
-  notes: 'Note', phase: 'Fase', round: 'Turno', game_id: 'Partita', player_id: 'Giocatore', minutes: 'Minuti (MM:SS)', points: 'Punti',
-  three_pointers_made: 'Tiri da 3', two_pointers_made: 'Tiri da 2', free_throws_made: 'Tiri liberi', fouls: 'Falli',
-  rebounds_off: 'Rimbalzi off.', rebounds_def: 'Rimbalzi dif.', assists: 'Assist', turnovers: 'Palle perse', season: 'Stagione',
-  competition: 'Campionato', team_id: 'Squadra', number: 'Numero', role: 'Ruolo', active: 'Attivo',
+  id: 'Stable ID', date: 'Date', time: 'Time', status: 'Status', home_team: 'Home team', away_team: 'Away team',
+  home_score: 'Home score', away_score: 'Away score', venue: 'Venue', address: 'Address', instagram_url: 'Instagram post', youtube_url: 'YouTube video',
+  notes: 'Notes', phase: 'Phase', round: 'Round', game_id: 'Game', player_id: 'Player', minutes: 'Minutes (MM:SS)', points: 'Points',
+  three_pointers_made: 'Three-pointers', two_pointers_made: 'Two-pointers', free_throws_made: 'Free throws', fouls: 'Fouls',
+  rebounds_off: 'Offensive rebounds', rebounds_def: 'Defensive rebounds', assists: 'Assists', turnovers: 'Turnovers', season: 'Season',
+  competition: 'Competition', team_id: 'Team', number: 'Number', role: 'Role', active: 'Active',
 };
 const preferredFields: Record<'games' | 'stats' | 'rosters', string[]> = {
   games: ['id', 'date', 'time', 'status', 'home_team', 'away_team', 'home_score', 'away_score', 'venue', 'address', 'phase', 'round', 'notes', 'instagram_url', 'youtube_url'],
@@ -40,7 +40,7 @@ const newCsvHeaders = {
 };
 
 function formatTime(value: string | null): string {
-  return value ? new Date(Number(value) * 1000).toLocaleString('it-IT') : 'mai in questa copia';
+  return value ? new Date(Number(value) * 1000).toLocaleString('en-US') : 'never in this copy';
 }
 function fileTitle(path: string) { return path.split('/').slice(-2).join(' / '); }
 function ErrorNotice({ text }: { text: string }) { return text ? <div className="notice error" role="alert">{text}</div> : null; }
@@ -73,7 +73,7 @@ export function App() {
   const [publishFiles, setPublishFiles] = useState<string[]>([]);
   const [preview, setPreview] = useState<PublicationPreview | null>(null);
   const [confirmation, setConfirmation] = useState('');
-  const [commitMessage, setCommitMessage] = useState('Aggiorna contenuti WebMAKER');
+  const [commitMessage, setCommitMessage] = useState('Update WebMAKER content');
   const [published, setPublished] = useState<PublicationResult | null>(null);
   const [mediaPath, setMediaPath] = useState('');
   const [mediaPreview, setMediaPreview] = useState('');
@@ -118,13 +118,13 @@ export function App() {
       await call('save_draft', { relative: file, content });
       return true;
     } catch (cause) {
-      setError(`Impossibile conservare la bozza: ${cause}`);
+      setError(`Could not save the draft: ${cause}`);
       return false;
     }
   }
   async function openProject() {
     if (!await preserveDraft()) return;
-    const chosen = await open({ directory: true, multiple: false, title: 'Seleziona la cartella del sito WebMAKER' });
+    const chosen = await open({ directory: true, multiple: false, title: 'Select the WebMAKER site folder' });
     if (typeof chosen !== 'string') return;
     await run(async () => {
       const loaded = await call<ProjectInfo>('open_project', { path: chosen });
@@ -132,7 +132,7 @@ export function App() {
       setCatalog(await call<Catalog>('catalog'));
       setSection('dashboard'); setFile('');
       setPublishFiles(loaded.changedFiles.filter((path) => path.startsWith('site/data/') || path.startsWith('site/content/news/') || path.startsWith('site/public/assets/')));
-    }, 'Progetto locale aperto. Le modifiche si salvano prima sul PC.');
+    }, 'Local project opened. Changes are saved on your computer first.');
   }
   async function loadFile(relative: string) {
     if (!relative || !await preserveDraft()) return;
@@ -144,8 +144,8 @@ export function App() {
         : !disk && relative.startsWith('site/data/player-stats/') ? newCsvHeaders.stats : disk;
       setFile(relative); setSavedContent(disk); setContent(recovered ? draft.content : starter);
       setSelectedRow(null); setSelectedTeam(''); setSelectedSeason(''); setSelectedCompetition(''); history.current = [];
-      if (recovered) setNotice(`Bozza locale recuperata (${formatTime(String(draft.savedAt))}). Usa “Salva sul PC” per applicarla.`);
-      else if (!disk && starter) setNotice('Archivio nuovo: aggiungi i record e salva sul PC per creare il CSV.');
+      if (recovered) setNotice(`Local draft recovered (${formatTime(String(draft.savedAt))}). Use “Save locally” to apply it.`);
+      else if (!disk && starter) setNotice('New archive: add records and save locally to create the CSV.');
     });
   }
   async function go(next: Section) {
@@ -170,11 +170,11 @@ export function App() {
       await refreshProject();
       setCatalog(await call<Catalog>('catalog'));
       setValidation(null); setPreview(null);
-    }, 'Salvato sul PC. Nessuna modifica è stata pubblicata.');
+    }, 'Saved locally. No changes have been published.');
   }
   useEffect(() => {
     if (!project || !file || !dirty) return;
-    const timer = window.setTimeout(() => { void call('save_draft', { relative: file, content }).catch((cause) => setError(`Bozza non salvata: ${cause}`)); }, 650);
+    const timer = window.setTimeout(() => { void call('save_draft', { relative: file, content }).catch((cause) => setError(`Draft not saved: ${cause}`)); }, 650);
     return () => window.clearTimeout(timer);
   }, [project, file, content, dirty]);
   useEffect(() => {
@@ -218,7 +218,7 @@ export function App() {
     try {
       change(addTeam(content, id, newTeamName, newTeamShortName));
       setSelectedTeam(id); setNewTeamId(''); setNewTeamName(''); setNewTeamShortName(''); setError('');
-      setNotice('Squadra aggiunta alla bozza. Salva sul PC prima di usarla in un campionato o in una partita.');
+      setNotice('Team added to the draft. Save locally before using it in a competition or game.');
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
   }
   function createSeason() {
@@ -231,7 +231,7 @@ export function App() {
     try {
       change(addCompetition(content, activeSeasonId, id, newCompetitionName, newCompetitionTeams));
       setSelectedCompetition(id); setNewCompetitionId(''); setNewCompetitionName(''); setNewCompetitionTeams([]); setError('');
-      setNotice('Campionato aggiunto alla bozza. Dopo il salvataggio potrai aprire i relativi archivi Partite e Statistiche.');
+      setNotice('Competition added to the draft. Save it to open its Games and Statistics archives.');
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
   }
   function updateNewsField(key: string, value: unknown, body?: string) {
@@ -240,18 +240,18 @@ export function App() {
   async function newPlayer() {
     if (!await preserveDraft()) return;
     const name = newTitle.trim(); const slug = safeSlug(name);
-    if (!name || !slug) { setError('Inserisci nome e cognome.'); return; }
+    if (!name || !slug) { setError('Enter a full name.'); return; }
     const relative = `site/data/players/${slug}.yaml`;
-    if (files.includes(relative)) { setError('Un file giocatore con questo nome esiste già.'); return; }
+    if (files.includes(relative)) { setError('A player file with this name already exists.'); return; }
     setFiles((old) => [...old, relative].sort());
-    setFile(relative); setSavedContent(''); setContent(`id: ${slug}\nname: ${JSON.stringify(name)}\nbio: Profilo in aggiornamento.\n`); setNewTitle(''); history.current = [];
+    setFile(relative); setSavedContent(''); setContent(`id: ${slug}\nname: ${JSON.stringify(name)}\nbio: Profile coming soon.\n`); setNewTitle(''); history.current = [];
   }
   async function newNews() {
     if (!await preserveDraft()) return;
     const title = newTitle.trim(); const slug = safeSlug(title);
-    if (!title || !slug) { setError('Inserisci un titolo.'); return; }
+    if (!title || !slug) { setError('Enter a title.'); return; }
     const relative = `site/content/news/${slug}.md`;
-    if (files.includes(relative)) { setError('Una notizia con questo slug esiste già.'); return; }
+    if (files.includes(relative)) { setError('A news item with this slug already exists.'); return; }
     setFiles((old) => [...old, relative].sort());
     setFile(relative); setSavedContent(''); setContent(`---\ntitle: ${JSON.stringify(title)}\ndate: ${new Date().toISOString().slice(0, 10)}\ncover:\nplayers: []\ngames: []\nexcerpt:\n---\n\n`); setNewTitle(''); history.current = [];
   }
@@ -262,7 +262,7 @@ export function App() {
     await run(async () => {
       const incoming = new CsvDocument(await call<string>('read_external_csv', { path: chosen }));
       const required = ['game_id', 'player_id'];
-      if (required.some((field) => !incoming.columns.includes(field))) throw new Error('CSV importato senza game_id/player_id.');
+      if (required.some((field) => !incoming.columns.includes(field))) throw new Error('Imported CSV is missing game_id/player_id.');
       const existing = new Set(csv.rows.map((_, index) => `${csv.get(index).game_id}|${csv.get(index).player_id}`));
       let added = 0; let skipped = 0;
       for (let index = 0; index < incoming.rows.length; index++) {
@@ -272,11 +272,11 @@ export function App() {
         existing.add(key); added++;
       }
       if (added) change(csv.serialize());
-      setNotice(`${added} statistiche aggiunte alla bozza; ${skipped} già presenti lasciate intatte. Controlla, poi salva sul PC.`);
+      setNotice(`${added} statistics added to the draft; ${skipped} existing records left unchanged. Review them, then save locally.`);
     });
   }
   async function chooseImage() {
-    const chosen = await open({ multiple: false, filters: [{ name: 'Immagini', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }] });
+    const chosen = await open({ multiple: false, filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }] });
     if (typeof chosen !== 'string') return;
     await run(async () => { setMediaPath(chosen); setMediaPreview(await call<string>('preview_image', { path: chosen })); });
   }
@@ -285,7 +285,7 @@ export function App() {
     await run(async () => {
       const sitePath = await call<string>('import_media', { path: mediaPath });
       await refreshProject();
-      setNotice(`Immagine copiata nel progetto: ${sitePath}. Inserisci questo percorso nel campo foto/copertina, poi pubblica quando pronta.`);
+      setNotice(`Image copied into the project: ${sitePath}. Use this path in the photo/cover field, then publish when ready.`);
     });
   }
   async function backup(exportMode: boolean, overwrite = false) {
@@ -297,7 +297,7 @@ export function App() {
       const result = await call<BackupResult>(exportMode ? 'export_backup' : 'restore_backup', exportMode
         ? { path: chosen, includeMedia: true } : { path: chosen, overwrite });
       if (!exportMode) { await refreshProject(); setCatalog(await call<Catalog>('catalog')); }
-      setNotice(`${exportMode ? 'Backup creato' : 'Ripristino completato'}: ${result.written} file. ${result.skipped.length ? `Saltati: ${result.skipped.slice(0, 5).join('; ')}` : ''}`);
+      setNotice(`${exportMode ? 'Backup created' : 'Restore completed'}: ${result.written} files. ${result.skipped.length ? `Skipped: ${result.skipped.slice(0, 5).join('; ')}` : ''}`);
     });
   }
   async function validate() { await run(async () => { setValidation(await call<ValidationReport>('validate_project')); }); }
@@ -327,78 +327,79 @@ export function App() {
   return <div className="studio-shell">
     <aside className="sidebar">
       <div className="brand"><span className="brand-mark">W</span><div><small>PLAYMAKER</small><strong>WebMAKER<span> Studio</span></strong></div></div>
-      <div className="sidebar-project"><span className="status-dot" />{project ? <><strong>{project.root.split(/[\\/]/).pop()}</strong><small>{project.branch} · copia locale</small></> : <><strong>Nessun progetto</strong><small>Apri la cartella del sito</small></>}</div>
-      <nav aria-label="Sezioni Studio">{sections.map((item, index) => <div key={item.id}>
+      <div className="sidebar-project"><span className="status-dot" />{project ? <><strong>{project.root.split(/[\\/]/).pop()}</strong><small>{project.branch} · local copy</small></> : <><strong>No project</strong><small>Open the site folder</small></>}</div>
+      <nav aria-label="Studio sections">{sections.map((item, index) => <div key={item.id}>
         {(index === 0 || item.group !== sections[index - 1].group) && <p className="nav-group">{item.group}</p>}
         <button type="button" className={section === item.id ? 'active' : ''} onClick={() => void go(item.id)} disabled={!project && item.id !== 'dashboard'}>{item.label}{item.id === 'publish' && project?.changedFiles.length ? <b>{project.changedFiles.length}</b> : null}</button>
       </div>)}</nav>
-      <div className="sidebar-bottom"><span>v0.2.1 · desktop locale</span><span>Ctrl+S per salvare</span></div>
+      <div className="sidebar-bottom"><span>v0.1.1 · local desktop app</span><span>Ctrl+S to save</span></div>
     </aside>
     <main className="workspace">
-      <header className="workspace-top"><div><span className="eyebrow">WebMAKER Studio</span><h1>{sections.find((item) => item.id === section)?.label}</h1></div><div className="top-actions"><span className="local-badge">{dirty ? 'Bozza non applicata' : 'Dati locali'}</span>{file && <><button className="button subtle" onClick={undo} disabled={!history.current.length}>Annulla</button><button className="button primary" onClick={() => void saveFile()} disabled={!dirty || busy}>Salva sul PC</button></>}</div></header>
+      <header className="workspace-top"><div><span className="eyebrow">WebMAKER Studio</span><h1>{sections.find((item) => item.id === section)?.label}</h1></div><div className="top-actions"><span className="local-badge">{dirty ? 'Unapplied draft' : 'Local data'}</span>{file && <><button className="button subtle" onClick={undo} disabled={!history.current.length}>Undo</button><button className="button primary" onClick={() => void saveFile()} disabled={!dirty || busy}>Save locally</button></>}</div></header>
       <ErrorNotice text={error} /><Notice text={notice} />
       {section === 'dashboard' && <div className="dashboard">
-        <div className="hero-panel"><span className="eyebrow">Una scrivania per il sito</span><h2>CONTENUTI<br /><em>SOTTO CONTROLLO.</em></h2><p>Partite, roster, statistiche e notizie restano file nel repository. Le bozze si salvano sul tuo PC; la pubblicazione è un passaggio separato e verificabile.</p><button className="button primary" onClick={() => void openProject()}>Apri progetto locale</button></div>
-        {project ? <><div className="metric-grid"><div><small>BRANCH</small><strong>{project.branch}</strong></div><div><small>FILE MODIFICATI</small><strong>{project.changedFiles.length}</strong></div><div><small>ULTIMA SINCRONIZZAZIONE</small><strong className="metric-small">{formatTime(project.lastSync)}</strong></div></div><div className="panel"><div className="panel-heading"><h3>Stato della copia locale</h3><div className="button-row"><button className="text-action" onClick={() => void run(refreshProject)}>Aggiorna stato</button><button className="text-action" onClick={() => void run(async () => { setProject(await call<ProjectInfo>('sync_project')); }, 'Sincronizzazione completata.')}>Sincronizza da GitHub</button></div></div><p><b>Cartella:</b> {project.root}</p><p><b>Origin:</b> {project.remote}</p><div className="file-tags">{project.changedFiles.length ? project.changedFiles.map((path) => <code key={path}>{path}</code>) : <span>Nessuna modifica locale.</span>}</div></div></> : <div className="panel"><h3>Per iniziare</h3><p>Seleziona la cartella che contiene <code>.git</code> e <code>site/</code>. Studio apre ogni progetto WebMAKER con club.yaml. Configura il remoto prima di pubblicare.</p></div>}
-        <div className="panel"><h3>Anteprima del sito</h3><p>Studio mostra i dati in modifica. Per vedere il sito completo esegui <code>cd site; npm run build; npm run dev</code> nel progetto.</p></div>
+        <div className="hero-panel"><span className="eyebrow">Your club workspace</span><h2>CONTENT<br /><em>UNDER CONTROL.</em></h2><p>Games, rosters, statistics, and news stay as files in the repository. Drafts are saved on your computer; publishing is a separate step you can verify.</p><button className="button primary" onClick={() => void openProject()}>Open local project</button></div>
+        {project ? <><div className="metric-grid"><div><small>BRANCH</small><strong>{project.branch}</strong></div><div><small>CHANGED FILES</small><strong>{project.changedFiles.length}</strong></div><div><small>LAST SYNC</small><strong className="metric-small">{formatTime(project.lastSync)}</strong></div></div><div className="panel"><div className="panel-heading"><h3>Local copy status</h3><div className="button-row"><button className="text-action" onClick={() => void run(refreshProject)}>Refresh status</button><button className="text-action" onClick={() => void run(async () => { setProject(await call<ProjectInfo>('sync_project')); }, 'Synchronization complete.')}>Sync from GitHub</button></div></div><p><b>Folder:</b> {project.root}</p><p><b>Origin:</b> {project.remote}</p><div className="file-tags">{project.changedFiles.length ? project.changedFiles.map((path) => <code key={path}>{path}</code>) : <span>No local changes.</span>}</div></div></> : <div className="panel"><h3>Get started</h3><p>Select the folder containing <code>.git</code> and <code>site/</code>. Studio opens WebMAKER projects with club.yaml. Configure the remote before publishing.</p></div>}
+        <div className="panel"><h3>Site preview</h3><p>Studio shows the data you are editing. To see the complete site, run <code>cd site; npm run build; npm run dev</code> in the project.</p></div>
+        <div className="panel"><h3>Attribution appreciated</h3><p>If you publish a site or post made with WebMAKER, a credit in the footer or description is appreciated but optional: <a href="https://github.com/PlayMAKER-apps/webmaker" target="_blank" rel="noreferrer">WebMAKER</a> by <a href="https://github.com/PlayMAKER-apps" target="_blank" rel="noreferrer">PlayMAKER</a>.</p></div>
       </div>}
 
-      {project && section === 'branding' && clubDoc && <div className="panel narrow"><span className="eyebrow">Identità del sito</span><h2>{String(clubDoc.get('name') ?? 'Club')}</h2><div className="form-grid">{[['name','Nome società'],['short_name','Nome breve'],['tagline','Slogan'],['description','Descrizione'],['language','Lingua'],['timezone','Timezone'],['site_url','URL del sito'],['repository_url','Repository GitHub'],['base_path','Base path'],['logo','Logo /assets/...'],['hero_image','Immagine hero /assets/...']].map(([key,label])=><label key={key}><span>{label}</span><input value={String(clubDoc.get(key) ?? '')} onChange={(event)=>updateYamlField(key,event.target.value)} /></label>)}<label><span>Tema del sito</span><select value={String(clubDoc.get('theme') ?? 'bold')} onChange={(event)=>updateYamlField('theme',event.target.value)}><option value="bold">Bold · sportivo</option><option value="classic">Classic · istituzionale</option><option value="dynamic">Dynamic · magazine</option></select></label><label><span>Sport</span><select value={String(clubDoc.get('sport') ?? 'basketball')} onChange={(event)=>updateYamlField('sport',event.target.value)}><option value="basketball">Basket</option><option value="football">Calcio</option></select></label>{[['primary','Colore primario'],['accent','Colore accento']].map(([key,label])=><label key={key}><span>{label}</span><input type="color" value={String(clubDoc.getIn(['colors',key]) ?? '#153a7a')} onChange={(event)=>updateYamlField(key,event.target.value,'colors')} /></label>)}</div><p className="hint">Il cambio tema modifica solo club.yaml. Salva sul PC, esegui la build per l’anteprima, poi pubblica.</p></div>}
+      {project && section === 'branding' && clubDoc && <div className="panel narrow"><span className="eyebrow">Site identity</span><h2>{String(clubDoc.get('name') ?? 'Club')}</h2><div className="form-grid">{[['name','Club name'],['short_name','Short name'],['tagline','Tagline'],['description','Description'],['language','Language'],['timezone','Time zone'],['site_url','Site URL'],['repository_url','Repository GitHub'],['base_path','Base path'],['logo','Logo /assets/...'],['hero_image','Hero image /assets/...']].map(([key,label])=><label key={key}><span>{label}</span><input value={String(clubDoc.get(key) ?? '')} onChange={(event)=>updateYamlField(key,event.target.value)} /></label>)}<label><span>Site theme</span><select value={String(clubDoc.get('theme') ?? 'bold')} onChange={(event)=>updateYamlField('theme',event.target.value)}><option value="bold">Bold · sporty</option><option value="classic">Classic · institutional</option><option value="dynamic">Dynamic · magazine</option></select></label><label><span>Sport</span><select value={String(clubDoc.get('sport') ?? 'basketball')} onChange={(event)=>updateYamlField('sport',event.target.value)}><option value="basketball">Basketball</option><option value="football">Football</option></select></label>{[['primary','Primary color'],['accent','Accent color']].map(([key,label])=><label key={key}><span>{label}</span><input type="color" value={String(clubDoc.getIn(['colors',key]) ?? '#153a7a')} onChange={(event)=>updateYamlField(key,event.target.value,'colors')} /></label>)}</div><p className="hint">Changing the theme only edits club.yaml. Save locally, build the site to preview it, then publish.</p></div>}
 
-      {project && (section === 'games' || section === 'stats' || section === 'players' || section === 'news') && <div className="file-strip"><label>File <select value={file} onChange={(event) => void loadFile(event.target.value)}><option value="">Seleziona un file…</option>{files.map((path) => <option key={path} value={path}>{fileTitle(path)}</option>)}</select></label>{(section === 'players' || section === 'news') && <div className="create-inline"><input value={newTitle} onChange={(event) => setNewTitle(event.target.value)} placeholder={section === 'players' ? 'Nome nuovo giocatore' : 'Titolo nuova notizia'} /><button className="button subtle" onClick={() => void (section === 'players' ? newPlayer() : newNews())}>Crea</button></div>}</div>}
+      {project && (section === 'games' || section === 'stats' || section === 'players' || section === 'news') && <div className="file-strip"><label>File <select value={file} onChange={(event) => void loadFile(event.target.value)}><option value="">Select a file…</option>{files.map((path) => <option key={path} value={path}>{fileTitle(path)}</option>)}</select></label>{(section === 'players' || section === 'news') && <div className="create-inline"><input value={newTitle} onChange={(event) => setNewTitle(event.target.value)} placeholder={section === 'players' ? 'New player name' : 'New article title'} /><button className="button subtle" onClick={() => void (section === 'players' ? newPlayer() : newNews())}>Create</button></div>}</div>}
 
-      {project && csvKind && csv && <div className="editor-layout"><div className="record-list"><div className="record-list-head"><input type="search" placeholder="Cerca…" value={filter} onChange={(event) => setFilter(event.target.value)} /><button title="Aggiungi record" onClick={addCsvRow}>+</button></div><small className="count">{filteredRows.length} record · {fileTitle(file)}</small><div className="record-scroll">{filteredRows.map((index) => { const row = csv.get(index); const title = csvKind === 'games' ? `${row.home_team || 'Casa'} / ${row.away_team || 'Trasferta'}` : csvKind === 'stats' ? `${row.player_id || 'Giocatore'} / ${row.game_id || 'Partita'}` : `${row.player_id || 'Giocatore'} / ${row.team_id || 'Squadra'}`; return <button key={`${index}-${row.id || row.player_id}`} className={selectedRow === index ? 'selected' : ''} onClick={() => setSelectedRow(index)}><small>{row.date || row.season || row.game_id || 'NUOVO'}</small><strong>{title}</strong><span>{row.status || row.number || row.points || ''}</span></button>; })}</div></div><div className="panel record-editor">{selected ? <><div className="panel-heading"><div><span className="eyebrow">{csvKind === 'games' ? 'Scheda partita' : csvKind === 'stats' ? 'Dato inserito' : 'Iscrizione roster'}</span><h2>{csvKind === 'games' ? 'Dettagli partita' : csvKind === 'stats' ? 'Statistiche giocatore' : 'Giocatore in squadra'}</h2></div></div><div className="form-grid">{[...preferredFields[csvKind], ...csv.columns.filter((column) => !preferredFields[csvKind].includes(column))].filter((column) => csv.columns.includes(column)).map((column) => <label key={column} className={['notes', 'instagram_url', 'youtube_url', 'address'].includes(column) ? 'wide' : ''}><span>{fieldLabels[column] || column}</span>{(column === 'home_team' || column === 'away_team' || column === 'team_id') ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="">Seleziona…</option>{catalog.teams.map((id) => <option key={id}>{id}</option>)}</select> : column === 'player_id' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="">Seleziona…</option>{catalog.players.map((id) => <option key={id}>{id}</option>)}</select> : column === 'game_id' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="">Seleziona…</option>{catalog.games.map((id) => <option key={id}>{id}</option>)}</select> : column === 'status' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}>{['scheduled', 'played', 'final'].map((item) => <option key={item}>{item}</option>)}</select> : column === 'active' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="true">Sì</option><option value="false">No</option></select> : <input value={selected[column] ?? ''} type={column === 'date' ? 'date' : column === 'time' ? 'time' : 'text'} readOnly={column === 'id' && savedContent.includes(selected.id)} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)} />}</label>)}</div>{csvKind === 'stats' && <p className="hint">Questi sono i valori inseriti nel CSV. Le medie e i totali vengono calcolati dal sito durante la build.</p>}</> : <div className="empty-selection"><strong>Seleziona un record</strong><p>Apri una riga dall’elenco o creane una nuova. Le modifiche restano in bozza fino a “Salva sul PC”.</p></div>}{csvKind === 'stats' && <button className="button subtle" onClick={() => void importStats()}>Importa CSV · aggiungi solo record nuovi</button>}</div></div>}
+      {project && csvKind && csv && <div className="editor-layout"><div className="record-list"><div className="record-list-head"><input type="search" placeholder="Search…" value={filter} onChange={(event) => setFilter(event.target.value)} /><button title="Add record" onClick={addCsvRow}>+</button></div><small className="count">{filteredRows.length} record · {fileTitle(file)}</small><div className="record-scroll">{filteredRows.map((index) => { const row = csv.get(index); const title = csvKind === 'games' ? `${row.home_team || 'Home'} / ${row.away_team || 'Away'}` : csvKind === 'stats' ? `${row.player_id || 'Player'} / ${row.game_id || 'Game'}` : `${row.player_id || 'Player'} / ${row.team_id || 'Team'}`; return <button key={`${index}-${row.id || row.player_id}`} className={selectedRow === index ? 'selected' : ''} onClick={() => setSelectedRow(index)}><small>{row.date || row.season || row.game_id || 'NEW'}</small><strong>{title}</strong><span>{row.status || row.number || row.points || ''}</span></button>; })}</div></div><div className="panel record-editor">{selected ? <><div className="panel-heading"><div><span className="eyebrow">{csvKind === 'games' ? 'Game record' : csvKind === 'stats' ? 'Recorded statistic' : 'Roster entry'}</span><h2>{csvKind === 'games' ? 'Game details' : csvKind === 'stats' ? 'Player statistics' : 'Team player'}</h2></div></div><div className="form-grid">{[...preferredFields[csvKind], ...csv.columns.filter((column) => !preferredFields[csvKind].includes(column))].filter((column) => csv.columns.includes(column)).map((column) => <label key={column} className={['notes', 'instagram_url', 'youtube_url', 'address'].includes(column) ? 'wide' : ''}><span>{fieldLabels[column] || column}</span>{(column === 'home_team' || column === 'away_team' || column === 'team_id') ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="">Select…</option>{catalog.teams.map((id) => <option key={id}>{id}</option>)}</select> : column === 'player_id' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="">Select…</option>{catalog.players.map((id) => <option key={id}>{id}</option>)}</select> : column === 'game_id' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="">Select…</option>{catalog.games.map((id) => <option key={id}>{id}</option>)}</select> : column === 'status' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}>{['scheduled', 'played', 'final'].map((item) => <option key={item}>{item}</option>)}</select> : column === 'active' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="true">Yes</option><option value="false">No</option></select> : <input value={selected[column] ?? ''} type={column === 'date' ? 'date' : column === 'time' ? 'time' : 'text'} readOnly={column === 'id' && savedContent.includes(selected.id)} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)} />}</label>)}</div>{csvKind === 'stats' && <p className="hint">These are the values stored in the CSV. The site calculates averages and totals during the build.</p>}</> : <div className="empty-selection"><strong>Select a record</strong><p>Open a row from the list or create a new one. Changes remain in the draft until you select “Save locally”.</p></div>}{csvKind === 'stats' && <button className="button subtle" onClick={() => void importStats()}>Import CSV · add only new records</button>}</div></div>}
 
       {project && section === 'teams' && file && <div className="entity-stack narrow">
-        <div className="panel"><div className="panel-heading"><h2>Squadre</h2><span>{teamIds.length} squadre</span></div>
+        <div className="panel"><div className="panel-heading"><h2>Teams</h2><span>{teamIds.length} teams</span></div>
           <div className="team-tabs">{teamIds.map((id) => <button key={id} className={selectedTeam === id ? 'active' : ''} onClick={() => setSelectedTeam(id)}>{id}</button>)}</div>
-          {selectedTeam ? <><p className="hint">ID stabile: <code>{selectedTeam}</code>. Non cambia, perché è usato in partite e roster.</p><div className="form-grid">{['name', 'short_name', 'logo', 'logo_on_dark'].map((key) => <label key={key}><span>{key === 'name' ? 'Nome completo' : key === 'short_name' ? 'Nome breve' : key === 'logo' ? 'Logo su chiaro' : 'Logo su scuro'}</span><input value={String(teamDoc?.getIn([selectedTeam, key]) ?? '')} onChange={(event) => updateYamlField(key, event.target.value, selectedTeam)} /></label>)}</div></> : <p>Seleziona una squadra per modificarla, oppure aggiungine una qui sotto.</p>}
+          {selectedTeam ? <><p className="hint">Stable ID: <code>{selectedTeam}</code>. It cannot change because games and rosters use it.</p><div className="form-grid">{['name', 'short_name', 'logo', 'logo_on_dark'].map((key) => <label key={key}><span>{key === 'name' ? 'Full name' : key === 'short_name' ? 'Short name' : key === 'logo' ? 'Logo on light' : 'Logo on dark'}</span><input value={String(teamDoc?.getIn([selectedTeam, key]) ?? '')} onChange={(event) => updateYamlField(key, event.target.value, selectedTeam)} /></label>)}</div></> : <p>Select a team to edit it, or add one below.</p>}
         </div>
-        <div className="panel"><span className="eyebrow">Nuova squadra</span><h2>Aggiungi squadra</h2><div className="form-grid">
-          <label><span>ID stabile (es. samurai-aprilia)</span><input value={newTeamId} onChange={(event) => setNewTeamId(event.target.value)} placeholder="nuova-squadra" /></label>
-          <label><span>Nome completo</span><input value={newTeamName} onChange={(event) => setNewTeamName(event.target.value)} placeholder="Nome ufficiale" /></label>
-          <label><span>Nome breve</span><input value={newTeamShortName} onChange={(event) => setNewTeamShortName(event.target.value)} placeholder="Nome nel tabellone" /></label>
-        </div><p className="hint">Dopo averla aggiunta alla bozza, selezionala sopra per impostare i loghi. Le immagini si importano da “Immagini”.</p><button className="button primary" onClick={createTeam}>Aggiungi alla bozza</button></div>
+        <div className="panel"><span className="eyebrow">New team</span><h2>Add team</h2><div className="form-grid">
+          <label><span>Stable ID (e.g. aurora-juniors)</span><input value={newTeamId} onChange={(event) => setNewTeamId(event.target.value)} placeholder="new-team" /></label>
+          <label><span>Full name</span><input value={newTeamName} onChange={(event) => setNewTeamName(event.target.value)} placeholder="Official name" /></label>
+          <label><span>Short name</span><input value={newTeamShortName} onChange={(event) => setNewTeamShortName(event.target.value)} placeholder="Scoreboard name" /></label>
+        </div><p className="hint">After adding it to the draft, select it above to set logos. Import images under “Images”.</p><button className="button primary" onClick={createTeam}>Add to draft</button></div>
       </div>}
 
       {project && section === 'competitions' && file && competitionConfig && <div className="entity-stack narrow">
-        <div className="panel"><span className="eyebrow">Stagioni</span><h2>Stagione da gestire</h2><div className="form-grid">
-          <label><span>Stagione</span><select value={activeSeasonId} onChange={(event) => { setSelectedSeason(event.target.value); setSelectedCompetition(''); }}>
+        <div className="panel"><span className="eyebrow">Seasons</span><h2>Season to manage</h2><div className="form-grid">
+          <label><span>Season</span><select value={activeSeasonId} onChange={(event) => { setSelectedSeason(event.target.value); setSelectedCompetition(''); }}>
             {competitionConfig.seasons.map((season) => <option key={season.id} value={season.id}>{season.id}</option>)}
           </select></label>
-          <label><span>Stagione corrente del sito</span><select value={competitionConfig.current_season} onChange={(event) => applyContent(() => setCurrentSeason(content, event.target.value))}>
+          <label><span>Current site season</span><select value={competitionConfig.current_season} onChange={(event) => applyContent(() => setCurrentSeason(content, event.target.value))}>
             {competitionConfig.seasons.map((season) => <option key={season.id} value={season.id}>{season.id}</option>)}
           </select></label>
-        </div><p className="hint">Selezionare una stagione qui serve solo a gestirla; cambiare “Stagione corrente” modifica la stagione mostrata per prima sul sito.</p>
-          <div className="entity-create"><label><span>Nuova stagione (AAAA-AA)</span><input value={newSeasonId} onChange={(event) => setNewSeasonId(event.target.value)} placeholder="2027-28" /></label><button className="button subtle" onClick={createSeason}>Aggiungi stagione</button></div>
+        </div><p className="hint">Selecting a season here only opens it for editing; changing “Current site season” changes which season appears first on the site.</p>
+          <div className="entity-create"><label><span>New season (YYYY-YY)</span><input value={newSeasonId} onChange={(event) => setNewSeasonId(event.target.value)} placeholder="2027-28" /></label><button className="button subtle" onClick={createSeason}>Add season</button></div>
         </div>
-        {activeSeason && <div className="panel"><div className="panel-heading"><div><span className="eyebrow">{activeSeason.id}</span><h2>Campionati</h2></div><span>{activeSeason.competitions.length} campionati</span></div>
+        {activeSeason && <div className="panel"><div className="panel-heading"><div><span className="eyebrow">{activeSeason.id}</span><h2>Competitions</h2></div><span>{activeSeason.competitions.length} competitions</span></div>
           <div className="team-tabs">{activeSeason.competitions.map((competition) => <button key={competition.id} className={activeCompetitionId === competition.id ? 'active' : ''} onClick={() => setSelectedCompetition(competition.id)}>{competition.name || competition.id}</button>)}</div>
-          {activeCompetition ? <><p className="hint">ID stabile: <code>{activeCompetition.id}</code>. Mantenerlo evita di scollegare partite, classifiche e statistiche storiche.</p><div className="form-grid">
-            <label className="wide"><span>Nome del campionato</span><input value={activeCompetition.name ?? ''} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { name: event.target.value }))} /></label>
-            <label><span>Punti per vittoria (vuoto = solo vittorie)</span><input type="number" min="0" step="1" value={activeCompetition.standings_points?.win ?? ''} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { win: event.target.value === '' ? null : Number(event.target.value) }))} /></label>
-            <label><span>Punti per sconfitta</span><input type="number" min="0" step="1" value={activeCompetition.standings_points?.loss ?? ''} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { loss: event.target.value === '' ? null : Number(event.target.value) }))} /></label>
-          </div><div className="entity-checks"><strong>Squadre partecipanti</strong><div className="checkbox-grid">{clubTeamOptions.map((id) => <label key={id}><input type="checkbox" checked={activeCompetitionTeams.includes(id)} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { teams: event.target.checked ? [...activeCompetitionTeams, id] : activeCompetitionTeams.filter((team) => team !== id) }))} />{id}</label>)}</div></div></> : <p>Nessun campionato in questa stagione. Aggiungine uno sotto.</p>}
+          {activeCompetition ? <><p className="hint">Stable ID: <code>{activeCompetition.id}</code>. Keeping it prevents older games, standings, and statistics from losing their links.</p><div className="form-grid">
+            <label className="wide"><span>Competition name</span><input value={activeCompetition.name ?? ''} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { name: event.target.value }))} /></label>
+            <label><span>Points per win (blank = wins only)</span><input type="number" min="0" step="1" value={activeCompetition.standings_points?.win ?? ''} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { win: event.target.value === '' ? null : Number(event.target.value) }))} /></label>
+            <label><span>Points per loss</span><input type="number" min="0" step="1" value={activeCompetition.standings_points?.loss ?? ''} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { loss: event.target.value === '' ? null : Number(event.target.value) }))} /></label>
+          </div><div className="entity-checks"><strong>Participating teams</strong><div className="checkbox-grid">{clubTeamOptions.map((id) => <label key={id}><input type="checkbox" checked={activeCompetitionTeams.includes(id)} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { teams: event.target.checked ? [...activeCompetitionTeams, id] : activeCompetitionTeams.filter((team) => team !== id) }))} />{id}</label>)}</div></div></> : <p>No competitions in this season. Add one below.</p>}
         </div>}
-        {activeSeason && <div className="panel"><span className="eyebrow">Nuovo campionato · {activeSeasonId}</span><h2>Aggiungi campionato</h2><div className="form-grid">
-          <label><span>ID stabile (es. gold)</span><input value={newCompetitionId} onChange={(event) => setNewCompetitionId(event.target.value)} placeholder="gold" /></label>
-          <label><span>Nome completo</span><input value={newCompetitionName} onChange={(event) => setNewCompetitionName(event.target.value)} placeholder="Amatori UISP Gold" /></label>
-        </div><div className="entity-checks"><strong>Squadre partecipanti</strong><div className="checkbox-grid">{catalog.teams.map((id) => <label key={id}><input type="checkbox" checked={newCompetitionTeams.includes(id)} onChange={(event) => setNewCompetitionTeams(event.target.checked ? [...newCompetitionTeams, id] : newCompetitionTeams.filter((team) => team !== id))} />{id}</label>)}</div></div>
-          <p className="hint">Gli archivi delle partite e delle statistiche saranno disponibili dopo aver salvato la configurazione. Gli ID non potranno essere cambiati dall’interfaccia.</p><button className="button primary" onClick={createCompetition}>Aggiungi alla bozza</button>
+        {activeSeason && <div className="panel"><span className="eyebrow">New competition · {activeSeasonId}</span><h2>Add competition</h2><div className="form-grid">
+          <label><span>Stable ID (e.g. gold)</span><input value={newCompetitionId} onChange={(event) => setNewCompetitionId(event.target.value)} placeholder="gold" /></label>
+          <label><span>Full name</span><input value={newCompetitionName} onChange={(event) => setNewCompetitionName(event.target.value)} placeholder="Community League Gold" /></label>
+        </div><div className="entity-checks"><strong>Participating teams</strong><div className="checkbox-grid">{catalog.teams.map((id) => <label key={id}><input type="checkbox" checked={newCompetitionTeams.includes(id)} onChange={(event) => setNewCompetitionTeams(event.target.checked ? [...newCompetitionTeams, id] : newCompetitionTeams.filter((team) => team !== id))} />{id}</label>)}</div></div>
+          <p className="hint">Game and statistics archives become available after saving the configuration. IDs cannot be changed in Studio.</p><button className="button primary" onClick={createCompetition}>Add to draft</button>
         </div>}
       </div>}
 
-      {project && section === 'players' && file && playerDoc && <div className="panel narrow"><span className="eyebrow">Profilo giocatore</span><h2>{String(playerDoc.get('name') ?? 'Nuovo giocatore')}</h2><div className="form-grid">{['id', 'name', 'birth_date', 'instagram', 'photo'].map((key) => <label key={key}><span>{key === 'birth_date' ? 'Data di nascita' : key === 'photo' ? 'Foto (/assets/...)' : key}</span><input value={String(playerDoc.get(key) ?? '')} readOnly={key === 'id'} onChange={(event) => updateYamlField(key, event.target.value)} /></label>)}<label className="wide"><span>Bio</span><textarea rows={8} value={String(playerDoc.get('bio') ?? '')} onChange={(event) => updateYamlField('bio', event.target.value)} /></label><label className="wide"><span>Contenuti social (un URL per riga)</span><textarea rows={4} value={playerSocialUrls(playerDoc).join('\n')} onChange={(event) => updateYamlField('social_urls', event.target.value.split('\n').map((value) => value.trim()).filter(Boolean))} /></label></div><p className="hint">Percorsi foto: importa prima l’immagine nella sezione Immagini. La carriera può restare discorsiva nella bio.</p></div>}
+      {project && section === 'players' && file && playerDoc && <div className="panel narrow"><span className="eyebrow">Player profile</span><h2>{String(playerDoc.get('name') ?? 'New player')}</h2><div className="form-grid">{['id', 'name', 'birth_date', 'instagram', 'photo'].map((key) => <label key={key}><span>{key === 'birth_date' ? 'Date of birth' : key === 'photo' ? 'Photo (/assets/...)' : key}</span><input value={String(playerDoc.get(key) ?? '')} readOnly={key === 'id'} onChange={(event) => updateYamlField(key, event.target.value)} /></label>)}<label className="wide"><span>Bio</span><textarea rows={8} value={String(playerDoc.get('bio') ?? '')} onChange={(event) => updateYamlField('bio', event.target.value)} /></label><label className="wide"><span>Social links (one URL per line)</span><textarea rows={4} value={playerSocialUrls(playerDoc).join('\n')} onChange={(event) => updateYamlField('social_urls', event.target.value.split('\n').map((value) => value.trim()).filter(Boolean))} /></label></div><p className="hint">For photo paths, import the image under Images first. Career details can stay in the biography.</p></div>}
 
-      {project && section === 'news' && file && news && <div className="news-layout"><div className="panel"><span className="eyebrow">Notizia · {fileTitle(file)}</span><div className="form-grid">{['title', 'date', 'cover', 'excerpt'].map((key) => <label key={key} className={key === 'excerpt' ? 'wide' : ''}><span>{key === 'title' ? 'Titolo' : key === 'date' ? 'Data' : key === 'cover' ? 'Copertina (/assets/...)' : 'Introduzione'}</span><input type={key === 'date' ? 'date' : 'text'} value={String(news.metadata[key] ?? '')} onChange={(event) => updateNewsField(key, event.target.value)} /></label>)}{['players', 'games'].map((key) => <label key={key}><span>{key === 'players' ? 'Giocatori collegati (ID, separati da virgola)' : 'Partite collegate (ID, separate da virgola)'}</span><input value={Array.isArray(news.metadata[key]) ? (news.metadata[key] as string[]).join(', ') : ''} onChange={(event) => updateNewsField(key, event.target.value.split(',').map((id) => id.trim()).filter(Boolean))} /></label>)}<label className="wide"><span>Testo Markdown</span><textarea className="markdown-editor" rows={20} value={news.body} onChange={(event) => { try { change(news.update({}, event.target.value)); } catch (cause) { setError(String(cause)); } }} /></label></div></div><div className="panel preview-panel"><span className="eyebrow">Anteprima Markdown</span><h2>{String(news.metadata.title ?? '')}</h2><iframe sandbox="" title="Anteprima della notizia" srcDoc={`<!doctype html><html><head><meta charset="UTF-8"><style>body{font:16px/1.65 Arial;padding:24px;color:#222}img{max-width:100%}a{color:#8a2632}h1,h2{line-height:1.1}</style></head><body>${String(marked.parse(news.body, { async: false }))}</body></html>`} /></div></div>}
+      {project && section === 'news' && file && news && <div className="news-layout"><div className="panel"><span className="eyebrow">News item · {fileTitle(file)}</span><div className="form-grid">{['title', 'date', 'cover', 'excerpt'].map((key) => <label key={key} className={key === 'excerpt' ? 'wide' : ''}><span>{key === 'title' ? 'Title' : key === 'date' ? 'Date' : key === 'cover' ? 'Cover (/assets/...)' : 'Introduction'}</span><input type={key === 'date' ? 'date' : 'text'} value={String(news.metadata[key] ?? '')} onChange={(event) => updateNewsField(key, event.target.value)} /></label>)}{['players', 'games'].map((key) => <label key={key}><span>{key === 'players' ? 'Linked players (comma-separated IDs)' : 'Linked games (comma-separated IDs)'}</span><input value={Array.isArray(news.metadata[key]) ? (news.metadata[key] as string[]).join(', ') : ''} onChange={(event) => updateNewsField(key, event.target.value.split(',').map((id) => id.trim()).filter(Boolean))} /></label>)}<label className="wide"><span>Markdown text</span><textarea className="markdown-editor" rows={20} value={news.body} onChange={(event) => { try { change(news.update({}, event.target.value)); } catch (cause) { setError(String(cause)); } }} /></label></div></div><div className="panel preview-panel"><span className="eyebrow">Markdown preview</span><h2>{String(news.metadata.title ?? '')}</h2><iframe sandbox="" title="Article preview" srcDoc={`<!doctype html><html><head><meta charset="UTF-8"><style>body{font:16px/1.65 Arial;padding:24px;color:#222}img{max-width:100%}a{color:#8a2632}h1,h2{line-height:1.1}</style></head><body>${String(marked.parse(news.body, { async: false }))}</body></html>`} /></div></div>}
 
-      {project && section === 'media' && <div className="panel narrow"><span className="eyebrow">Asset del sito</span><h2>Importa un’immagine</h2><p>PNG, JPEG, WebP o GIF fino a 8 MB. Studio copia il file con un nome sicuro dentro <code>site/public/assets/</code>.</p><button className="button subtle" onClick={() => void chooseImage()}>Scegli immagine</button>{mediaPath && <div className="media-preview"><p>{mediaPath}</p>{mediaPreview && <img src={mediaPreview} alt="Anteprima immagine selezionata" />}<button className="button primary" onClick={() => void importImage()}>Copia nel progetto</button></div>}<p className="hint">Non importare video pesanti: usa un link YouTube nel campo della partita.</p></div>}
+      {project && section === 'media' && <div className="panel narrow"><span className="eyebrow">Site assets</span><h2>Import an image</h2><p>PNG, JPEG, WebP, or GIF up to 8 MB. Studio copies the file with a safe name into <code>site/public/assets/</code>.</p><button className="button subtle" onClick={() => void chooseImage()}>Choose image</button>{mediaPath && <div className="media-preview"><p>{mediaPath}</p>{mediaPreview && <img src={mediaPreview} alt="Selected image preview" />}<button className="button primary" onClick={() => void importImage()}>Copy into project</button></div>}<p className="hint">Do not import large videos; use a YouTube link in the game field.</p></div>}
 
-      {project && section === 'backup' && <div className="panel narrow"><span className="eyebrow">Ripristino controllato</span><h2>Backup dei contenuti</h2><p>Il backup ZIP v1 include dati, notizie e immagini. Il ripristino standard aggiunge soltanto file mancanti e segnala quelli già presenti.</p><div className="button-row"><button className="button primary" onClick={() => void backup(true)}>Esporta ZIP</button><button className="button subtle" onClick={() => void backup(false)}>Ripristina senza sovrascrivere</button></div><details><summary>Ripristino con sovrascrittura</summary><p>Ogni file esistente viene prima copiato nei backup locali di Studio. Usa questa opzione solo dopo aver controllato lo ZIP.</p><button className="button danger" onClick={() => void backup(false, true)}>Scegli ZIP e sovrascrivi</button></details></div>}
+      {project && section === 'backup' && <div className="panel narrow"><span className="eyebrow">Controlled restore</span><h2>Content backups</h2><p>The ZIP backup includes data, news, and images. A standard restore adds only missing files and reports existing ones.</p><div className="button-row"><button className="button primary" onClick={() => void backup(true)}>Export ZIP</button><button className="button subtle" onClick={() => void backup(false)}>Restore without overwriting</button></div><details><summary>Restore and overwrite</summary><p>Studio backs up each existing file before replacing it. Use this only after checking the ZIP.</p><button className="button danger" onClick={() => void backup(false, true)}>Choose ZIP and overwrite</button></details></div>}
 
-      {project && section === 'publish' && <div className="publish-layout"><div className="panel"><span className="eyebrow">1 / Controlli</span><h2>Prima della pubblicazione</h2><button className="button subtle" onClick={() => void validate()}>Valida tutti i contenuti</button>{validation && <div className={validation.errors.length ? 'validation bad' : 'validation good'}><strong>{validation.errors.length ? `${validation.errors.length} problemi da correggere` : 'Dati validi'}</strong><p>{validation.games} partite · {validation.players} giocatori · {validation.news} notizie</p>{validation.errors.map((item, index) => <p key={index}>{item}</p>)}</div>}<p className="hint">I dati inseriti vengono confrontati con squadre, giocatori e partite esistenti. Il sito completo va verificato con la build prima del rilascio.</p></div><div className="panel"><span className="eyebrow">2 / Revisione</span><h2>File da includere</h2><p>Seleziona solo i contenuti intenzionali. Il codice dello Studio e del sito non viene aggiunto automaticamente.</p><div className="publish-files">{project.changedFiles.filter((path) => path.startsWith('site/data/') || path.startsWith('site/content/news/') || path.startsWith('site/public/assets/')).map((path) => <label key={path}><input type="checkbox" checked={publishFiles.includes(path)} onChange={(event) => setPublishFiles(event.target.checked ? [...publishFiles, path] : publishFiles.filter((item) => item !== path))} /><code>{path}</code></label>)}{!project.changedFiles.length && <p>Nessun file locale modificato.</p>}</div><button className="button subtle" onClick={() => void showPreview()} disabled={!publishFiles.length}>Anteprima commit / push (dry run)</button>{preview && <><div className={preview.canPublish ? 'validation good' : 'validation bad'}><strong>{preview.canPublish ? 'Pubblicazione tecnicamente pronta' : 'Push bloccato in questa copia'}</strong>{preview.errors.map((item, index) => <p key={index}>{item}</p>)}<p>{preview.files.length} file selezionati · branch {preview.branch} · origin/main: {preview.ahead ?? '?'} avanti, {preview.behind ?? '?'} indietro</p></div><pre className="diff">{preview.diff || 'Nessun diff tracciato; i nuovi media saranno aggiunti solo alla conferma.'}</pre></>}</div><div className="panel publish-confirm"><span className="eyebrow">3 / Conferma esplicita</span><h2>Pubblica su GitHub</h2><p>Studio esegue fetch, blocca le divergenze, crea un commit dei soli file selezionati e invia a <code>main</code>. Il deploy GitHub Pages parte dopo il push.</p><label><span>Messaggio commit</span><input value={commitMessage} onChange={(event) => setCommitMessage(event.target.value)} /></label><label><span>Per confermare digita PUBBLICA SU MAIN</span><input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" /></label><button className="button primary" disabled={!preview?.canPublish || confirmation !== 'PUBBLICA SU MAIN' || busy} onClick={() => void doPublish()}>Pubblica su GitHub</button>{published && <div className="validation good"><strong>Push riuscito · {published.commit.slice(0, 8)}</strong><p>{published.deployStatus}</p><a href={published.commitUrl} target="_blank" rel="noreferrer">Commit ↗</a><a href={published.actionsUrl} target="_blank" rel="noreferrer">Workflow Actions ↗</a><a href={published.siteUrl} target="_blank" rel="noreferrer">Sito ↗</a></div>}</div></div>}
-      {project && ['games', 'stats', 'players', 'news'].includes(section) && !file && <div className="panel empty-file"><h2>Seleziona un file</h2><p>Scegli una stagione o un profilo dall’elenco qui sopra. I dati storici restano disponibili senza modifiche automatiche.</p></div>}
-      {busy && <div className="busy" role="status">Operazione in corso…</div>}
+      {project && section === 'publish' && <div className="publish-layout"><div className="panel"><span className="eyebrow">1 / Checks</span><h2>Before publishing</h2><button className="button subtle" onClick={() => void validate()}>Validate all content</button>{validation && <div className={validation.errors.length ? 'validation bad' : 'validation good'}><strong>{validation.errors.length ? `${validation.errors.length} issues to fix` : 'Valid data'}</strong><p>{validation.games} games · {validation.players} players · {validation.news} news</p>{validation.errors.map((item, index) => <p key={index}>{item}</p>)}</div>}<p className="hint">Entered data is checked against existing teams, players, and games. Build the full website before a release.</p></div><div className="panel"><span className="eyebrow">2 / Review</span><h2>Files to include</h2><p>Select only the files you intend to publish. Studio and site source code are not staged automatically.</p><div className="publish-files">{project.changedFiles.filter((path) => path.startsWith('site/data/') || path.startsWith('site/content/news/') || path.startsWith('site/public/assets/')).map((path) => <label key={path}><input type="checkbox" checked={publishFiles.includes(path)} onChange={(event) => setPublishFiles(event.target.checked ? [...publishFiles, path] : publishFiles.filter((item) => item !== path))} /><code>{path}</code></label>)}{!project.changedFiles.length && <p>No local files changed.</p>}</div><button className="button subtle" onClick={() => void showPreview()} disabled={!publishFiles.length}>Preview commit / push (dry run)</button>{preview && <><div className={preview.canPublish ? 'validation good' : 'validation bad'}><strong>{preview.canPublish ? 'Ready to publish' : 'Push blocked in this copy'}</strong>{preview.errors.map((item, index) => <p key={index}>{item}</p>)}<p>{preview.files.length} selected files · branch {preview.branch} · origin/main: {preview.ahead ?? '?'} ahead, {preview.behind ?? '?'} behind</p></div><pre className="diff">{preview.diff || 'No tracked diff; new media are added only after confirmation.'}</pre></>}</div><div className="panel publish-confirm"><span className="eyebrow">3 / Explicit confirmation</span><h2>Publish to GitHub</h2><p>Studio fetches, blocks divergence, commits only selected files, and pushes to <code>main</code>. GitHub Pages deployment starts after the push.</p><label><span>Commit message</span><input value={commitMessage} onChange={(event) => setCommitMessage(event.target.value)} /></label><label><span>To confirm, type PUBLISH TO MAIN</span><input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" /></label><button className="button primary" disabled={!preview?.canPublish || confirmation !== 'PUBLISH TO MAIN' || busy} onClick={() => void doPublish()}>Publish to GitHub</button>{published && <div className="validation good"><strong>Push successful · {published.commit.slice(0, 8)}</strong><p>{published.deployStatus}</p><a href={published.commitUrl} target="_blank" rel="noreferrer">Commit ↗</a><a href={published.actionsUrl} target="_blank" rel="noreferrer">Actions workflow ↗</a><a href={published.siteUrl} target="_blank" rel="noreferrer">Site ↗</a></div>}</div></div>}
+      {project && ['games', 'stats', 'players', 'news'].includes(section) && !file && <div className="panel empty-file"><h2>Select a file</h2><p>Choose a season or profile from the list above. Historical data remain available without automatic changes.</p></div>}
+      {busy && <div className="busy" role="status">Working…</div>}
     </main>
   </div>;
 }

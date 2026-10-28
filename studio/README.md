@@ -1,10 +1,10 @@
-# WebMAKER Studio 0.1.0
+# WebMAKER Studio
 
-App desktop Tauri 2 + React/TypeScript derivata dal pilota Nerone, creato dall'autore di PlayMAKER. Apre un progetto WebMAKER alla volta, legge e modifica CSV/YAML/Markdown, conserva bozze e backup locali, valida e prepara un push Git controllato. Non richiede un backend web. Codice Apache-2.0 con attribuzione nel file NOTICE della repository.
+WebMAKER Studio is a Tauri 2 + React/TypeScript desktop app developed from the Nerone Basket pilot, whose code was written by the PlayMAKER author. It opens one WebMAKER club project at a time, edits CSV/YAML/Markdown files, keeps local drafts and backups, validates content, and prepares a guarded Git push. It does not need a web backend. The code is Apache-2.0 with attribution in the repository NOTICE.
 
-## Avvio e build
+## Run and build
 
-Richiede Node.js 22+, Rust stable con target MSVC, Visual Studio Build Tools C++, WebView2 e Git for Windows.
+Requires Node.js 22+, stable Rust with the MSVC target, Visual Studio Build Tools for C++, WebView2, and Git for Windows.
 
 ```powershell
 npm ci
@@ -14,14 +14,14 @@ cargo test --manifest-path src-tauri/Cargo.toml
 npm run tauri dev
 ```
 
-`npm run tauri build` produce il pacchetto Windows in `src-tauri/target/release/bundle/`. Gli installer pubblicati sono nella [release GitHub](https://github.com/PlayMAKER-apps/webmaker/releases/tag/v0.1.0); non sono inclusi nel sito statico.
+Run `npm run tauri build` to produce Windows packages under `src-tauri/target/release/bundle/`. Published installers are on the [GitHub releases page](https://github.com/PlayMAKER-apps/webmaker/releases); they are not part of the static website.
 
-## Uso
+## Use
 
-Apri la root di un repository Git per club con `site/data/club.yaml`, `site/data/teams.yaml`, `site/data/competitions.yaml` e `site/content/news/`. Il repository può essere ancora locale: il remote non è necessario per editare. In **Club e tema** modifica branding, URL, colori e tema; salva sul PC e costruisci `site/` per vedere l'anteprima reale. Studio non copia i dati quando cambia tema.
+Open the Git root of a club repository containing `site/data/club.yaml`, `site/data/teams.yaml`, `site/data/competitions.yaml`, and `site/content/news/`. The repository may still be local; a remote is not required for editing. Under **Club & theme**, edit branding, URLs, colors, and theme. Save locally and build `site/` to preview the rendered website. Changing the theme does not copy or replace data.
 
-Le bozze sono salvate localmente e i file vengono scritti in modo atomico con backup. Il pulsante **Pubblica** prima valida i riferimenti e mostra il diff. Serve un branch `main`, `origin` allineato e identico al `repository_url` configurato, staging vuoto e conferma testuale. Le credenziali sono gestite da Git Credential Manager, non da file JSON o PAT nello Studio. Dopo il push controlla GitHub Actions: il deploy può ancora fallire.
+Drafts stay local. Studio writes files atomically and keeps backups. **Publish** validates references and shows the diff before pushing. Publishing requires a `main` branch, a clean staging area, an aligned `origin` that exactly matches the configured `repository_url`, and typed confirmation. Git Credential Manager handles credentials; Studio does not save a token. Check GitHub Actions after pushing because deployment can still fail.
 
-Uno Studio può aprire più club in successione; bozze e backup sono separati per progetto. In caso di conflitto remoto o modifiche esterne al file, Studio blocca l'operazione e chiede una risoluzione manuale.
+One Studio installation can open multiple clubs in succession; drafts and backups remain separate by project. Studio blocks remote conflicts and external file changes so you can resolve them manually.
 
-I campi statistiche dell'editor restano inizialmente orientati al basket. I profili sport del sito sono in `../shared/profiles/`; l'editor dinamico per tutti gli sport e il generatore grafico non sono inclusi in questo candidato.
+The statistics editor still has basketball-oriented fields. The website's sport profiles are in `../shared/profiles/`. A fully profile-driven editor and the social graphics generator are not part of this version.

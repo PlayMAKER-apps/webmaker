@@ -21,9 +21,9 @@ pub struct BackupResult { pub written: usize, pub skipped: Vec<String> }
 pub fn export_backup(path: String, include_media: bool, state: tauri::State<'_, ProjectState>) -> Result<BackupResult, String> {
     let root = root(&state)?;
     let target = Path::new(&path);
-    if target.exists() { return Err("Il file ZIP esiste già. Scegli un nome nuovo per non sovrascrivere il backup precedente.".into()); }
-    if !path.to_ascii_lowercase().ends_with(".zip") { return Err("Il backup deve avere estensione .zip.".into()); }
-    let file = File::create(target).map_err(|error| format!("Impossibile creare backup: {error}"))?;
+    if target.exists() { return Err("The ZIP file already exists. Choose a new name to keep the previous backup.".into()); }
+    if !path.to_ascii_lowercase().ends_with(".zip") { return Err("The backup must use the .zip extension.".into()); }
+    let file = File::create(target).map_err(|error| format!("Could not create backup: {error}"))?;
     let mut zip = ZipWriter::new(file);
     let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
     let manifest = Manifest { format: "webmaker-backup".into(), version: FORMAT_VERSION, include_media };
@@ -47,20 +47,20 @@ pub fn export_backup(path: String, include_media: bool, state: tauri::State<'_, 
 #[tauri::command]
 pub fn restore_backup(path: String, overwrite: bool, state: tauri::State<'_, ProjectState>) -> Result<BackupResult, String> {
     let root = root(&state)?;
-    let file = File::open(path).map_err(|error| format!("Backup non accessibile: {error}"))?;
-    let mut zip = ZipArchive::new(file).map_err(|error| format!("ZIP non valido: {error}"))?;
+    let file = File::open(path).map_err(|error| format!("Backup is inaccessible: {error}"))?;
+    let mut zip = ZipArchive::new(file).map_err(|error| format!("Invalid ZIP: {error}"))?;
     let mut manifest_text = String::new();
-    zip.by_name("manifest.json").map_err(|_| "Manifest WebMAKER mancante.".to_string())?.read_to_string(&mut manifest_text).map_err(|error| error.to_string())?;
-    let manifest: Manifest = serde_json::from_str(&manifest_text).map_err(|error| format!("Manifest non valido: {error}"))?;
-    if !["webmaker-backup", "webmaker-nerone-backup"].contains(&manifest.format.as_str()) || manifest.version != FORMAT_VERSION { return Err("Versione backup non compatibile con Studio 0.1.".into()); }
+    zip.by_name("manifest.json").map_err(|_| "WebMAKER manifest is missing.".to_string())?.read_to_string(&mut manifest_text).map_err(|error| error.to_string())?;
+    let manifest: Manifest = serde_json::from_str(&manifest_text).map_err(|error| format!("Invalid manifest: {error}"))?;
+    if !["webmaker-backup", "webmaker-nerone-backup"].contains(&manifest.format.as_str()) || manifest.version != FORMAT_VERSION { return Err("Backup version is incompatible with Studio 0.1.".into()); }
     let mut entries = Vec::new();
     for index in 0..zip.len() {
         let entry = zip.by_index(index).map_err(|error| error.to_string())?;
         if entry.name() == "manifest.json" { continue; }
         let name = entry.name().to_string();
-        if !backup_path(&name, manifest.include_media) { return Err(format!("File non consentito nel backup: {name}")); }
+        if !backup_path(&name, manifest.include_media) { return Err(format!("File is not allowed in the backup: {name}")); }
         relative_path(&root, &name)?;
-        if entry.size() > 16 * 1024 * 1024 { return Err(format!("File troppo grande nel backup: {name}")); }
+        if entry.size() > 16 * 1024 * 1024 { return Err(format!("File is too large for the backup: {name}")); }
         entries.push(name);
     }
     let mut result = BackupResult { written: 0, skipped: Vec::new() };
@@ -68,8 +68,8 @@ pub fn restore_backup(path: String, overwrite: bool, state: tauri::State<'_, Pro
         let destination = relative_path(&root, &name)?;
         let mut bytes = Vec::new();
         zip.by_name(&name).map_err(|error| error.to_string())?.read_to_end(&mut bytes).map_err(|error| error.to_string())?;
-        if destination.exists() && fs::read(&destination).map_err(|error| error.to_string())? == bytes { result.skipped.push(format!("{name}: già identico")); continue; }
-        if destination.exists() && !overwrite { result.skipped.push(format!("{name}: esiste già; nessuna sovrascrittura")); continue; }
+        if destination.exists() && fs::read(&destination).map_err(|error| error.to_string())? == bytes { result.skipped.push(format!("{name}: already identical")); continue; }
+        if destination.exists() && !overwrite { result.skipped.push(format!("{name}: already exists; not overwritten")); continue; }
         atomic_write(&root, &name, &bytes)?;
         result.written += 1;
     }

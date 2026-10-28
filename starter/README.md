@@ -1,11 +1,11 @@
-# Starter club
+# Club starter
 
-Il sito dimostrativo in `site/` contiene solo club, giocatori e partite fittizi. Per creare una nuova istanza senza la storia Git di Nerone:
+The `site/` demonstration contains only fictional clubs, players, and games. Create a new instance without the Nerone Git history:
 
 ```bash
-node scripts/init-club.mjs ../mio-club
+node scripts/init-club.mjs ../my-club
 ```
 
-Lo script copia `site/`, `shared/` e il workflow Pages in una nuova cartella. Non copia Studio: lo stesso programma desktop può aprire più repository di club. Questa versione include una copia del motore in ogni istanza; le correzioni successive non arrivano automaticamente. Confronta la versione e porta gli aggiornamenti con una pull request guidata.
+The initializer copies `site/`, `shared/`, and the GitHub Pages workflow into a new folder. It does not copy Studio: one desktop installation can open multiple club repositories. This version places a copy of the generator in every club instance. Later fixes do not arrive automatically; compare versions and bring changes in through a reviewed pull request.
 
-Prima di pubblicare, sostituisci tutti i dati dimostrativi e configura URL, repository, immagini e contatti in `site/data/club.yaml`. Gli ID di squadre, giocatori e partite devono restare stabili dopo la prima pubblicazione.
+Before publishing, replace all demonstration data and configure the URL, repository, images, and contact details in `site/data/club.yaml`. Keep team, player, and game IDs stable after the first publication.

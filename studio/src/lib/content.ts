@@ -6,8 +6,8 @@ export function safeSlug(value: string): string {
 
 export function editYaml(source: string, patch: Record<string, unknown>): string {
   const document = parseDocument(source, { keepSourceTokens: true });
-  if (document.errors.length) throw new Error(`YAML non valido: ${document.errors[0].message}`);
-  if (!document.contents) throw new Error('YAML vuoto.');
+  if (document.errors.length) throw new Error(`Invalid YAML: ${document.errors[0].message}`);
+  if (!document.contents) throw new Error('YAML is empty.');
   for (const [key, value] of Object.entries(patch)) document.setIn([key], value);
   return String(document);
 }
@@ -17,8 +17,8 @@ const seasonId = /^\d{4}-\d{2}$/;
 
 function editableDocument(source: string) {
   const document = parseDocument(source, { keepSourceTokens: true });
-  if (document.errors.length) throw new Error(`YAML non valido: ${document.errors[0].message}`);
-  if (!document.contents) throw new Error('YAML vuoto.');
+  if (document.errors.length) throw new Error(`Invalid YAML: ${document.errors[0].message}`);
+  if (!document.contents) throw new Error('YAML is empty.');
   return document;
 }
 
@@ -31,16 +31,16 @@ export type CompetitionConfig = { current_season: string; seasons: SeasonEntry[]
 
 export function readCompetitionConfig(source: string): CompetitionConfig {
   const value = editableDocument(source).toJS() as Partial<CompetitionConfig>;
-  if (!Array.isArray(value.seasons)) throw new Error('Configurazione senza elenco stagioni.');
+  if (!Array.isArray(value.seasons)) throw new Error('Configuration is missing a season list.');
   return { current_season: value.current_season ?? '', seasons: value.seasons };
 }
 
 export function addTeam(source: string, id: string, name: string, shortName: string): string {
   const key = id.trim();
-  if (!stableId.test(key)) throw new Error('ID squadra: usa solo lettere minuscole, numeri e trattini.');
-  if (!name.trim() || !shortName.trim()) throw new Error('Inserisci nome completo e nome breve.');
+  if (!stableId.test(key)) throw new Error('Team ID: use only lowercase letters, numbers, and hyphens.');
+  if (!name.trim() || !shortName.trim()) throw new Error('Enter the full and short team names.');
   const document = editableDocument(source);
-  if (document.has(key)) throw new Error(`La squadra ${key} esiste già.`);
+  if (document.has(key)) throw new Error(`Team ${key} already exists.`);
   document.set(key, { name: name.trim(), short_name: shortName.trim(), logo: '' });
   return String(document);
 }
@@ -48,12 +48,12 @@ export function addTeam(source: string, id: string, name: string, shortName: str
 export function addSeason(source: string, id: string): string {
   const key = id.trim();
   if (!seasonId.test(key) || Number(key.slice(5)) !== (Number(key.slice(0, 4)) + 1) % 100) {
-    throw new Error('Stagione non valida: usa il formato 2027-28.');
+    throw new Error('Invalid season: use the 2027-28 format.');
   }
   const document = editableDocument(source);
   const config = document.toJS() as Partial<CompetitionConfig>;
-  if (!Array.isArray(config.seasons)) throw new Error('Elenco stagioni mancante.');
-  if (config.seasons.some((season) => season.id === key)) throw new Error(`La stagione ${key} esiste già.`);
+  if (!Array.isArray(config.seasons)) throw new Error('Season list is missing.');
+  if (config.seasons.some((season) => season.id === key)) throw new Error(`Season ${key} already exists.`);
   document.addIn(['seasons'], { id: key, competitions: [] });
   return String(document);
 }
@@ -62,20 +62,20 @@ function competitionLocation(source: string, season: string, competition: string
   const document = editableDocument(source);
   const config = document.toJS() as CompetitionConfig;
   const seasonIndex = config.seasons?.findIndex((item) => item.id === season) ?? -1;
-  if (seasonIndex < 0) throw new Error(`Stagione ${season} non trovata.`);
+  if (seasonIndex < 0) throw new Error(`Season ${season} not found.`);
   const items = config.seasons[seasonIndex].competitions;
-  if (!Array.isArray(items)) throw new Error('Elenco campionati mancante.');
+  if (!Array.isArray(items)) throw new Error('Competition list is missing.');
   const competitionIndex = items.findIndex((item) => item.id === competition);
   return { document, items, seasonIndex, competitionIndex };
 }
 
 export function addCompetition(source: string, season: string, id: string, name: string, teams: string[]): string {
   const key = id.trim();
-  if (!stableId.test(key)) throw new Error('ID campionato: usa solo lettere minuscole, numeri e trattini.');
-  if (!name.trim()) throw new Error('Inserisci il nome del campionato.');
-  if (!teams.length) throw new Error('Seleziona almeno una squadra partecipante.');
+  if (!stableId.test(key)) throw new Error('Competition ID: use only lowercase letters, numbers, and hyphens.');
+  if (!name.trim()) throw new Error('Enter a competition name.');
+  if (!teams.length) throw new Error('Select at least one participating team.');
   const { document, items, seasonIndex } = competitionLocation(source, season, key);
-  if (items.some((item) => item.id === key)) throw new Error(`Il campionato ${key} esiste già nella stagione ${season}.`);
+  if (items.some((item) => item.id === key)) throw new Error(`Competition ${key} already exists in season ${season}.`);
   document.addIn(['seasons', seasonIndex, 'competitions'], {
     id: key, name: name.trim(), teams: [...new Set(teams)], standings_points: { win: null, loss: null },
   });
@@ -84,13 +84,13 @@ export function addCompetition(source: string, season: string, id: string, name:
 
 export function editCompetition(source: string, season: string, id: string, patch: { name?: string; teams?: string[]; win?: number | null; loss?: number | null }): string {
   const { document, competitionIndex, seasonIndex } = competitionLocation(source, season, id);
-  if (competitionIndex < 0) throw new Error(`Campionato ${id} non trovato nella stagione ${season}.`);
+  if (competitionIndex < 0) throw new Error(`Competition ${id} was not found in season ${season}.`);
   const path = ['seasons', seasonIndex, 'competitions', competitionIndex];
   if (patch.name !== undefined) {
     document.setIn([...path, 'name'], patch.name);
   }
   if (patch.teams !== undefined) {
-    if (!patch.teams.length) throw new Error('Seleziona almeno una squadra partecipante.');
+    if (!patch.teams.length) throw new Error('Select at least one participating team.');
     const existing = document.getIn([...path, 'team']);
     if (existing !== undefined && patch.teams.length === 1) {
       document.setIn([...path, 'team'], patch.teams[0]);
@@ -103,7 +103,7 @@ export function editCompetition(source: string, season: string, id: string, patc
   for (const key of ['win', 'loss'] as const) {
     if (patch[key] !== undefined) {
       const value = patch[key];
-      if (value !== null && (!Number.isInteger(value) || value < 0)) throw new Error('I punti classifica devono essere interi non negativi.');
+      if (value !== null && (!Number.isInteger(value) || value < 0)) throw new Error('Standings points must be nonnegative integers.');
       document.setIn([...path, 'standings_points', key], value);
     }
   }
@@ -113,7 +113,7 @@ export function editCompetition(source: string, season: string, id: string, patc
 export function setCurrentSeason(source: string, season: string): string {
   const document = editableDocument(source);
   const config = document.toJS() as CompetitionConfig;
-  if (!config.seasons?.some((item) => item.id === season)) throw new Error(`Stagione ${season} non trovata.`);
+  if (!config.seasons?.some((item) => item.id === season)) throw new Error(`Season ${season} not found.`);
   document.set('current_season', season);
   return String(document);
 }
@@ -128,9 +128,9 @@ export type NewsDocument = { metadata: Record<string, unknown>; body: string; up
 
 export function parseNews(source: string): NewsDocument {
   const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
-  if (!match) throw new Error('Notizia senza front matter YAML valido.');
+  if (!match) throw new Error('News item is missing valid YAML front matter.');
   const document = parseDocument(match[1], { keepSourceTokens: true });
-  if (document.errors.length) throw new Error(`Metadati notizia non validi: ${document.errors[0].message}`);
+  if (document.errors.length) throw new Error(`Invalid news metadata: ${document.errors[0].message}`);
   const metadata = document.toJS() as Record<string, unknown>;
   return { metadata, body: match[2], update(patch, body) {
     for (const [key, value] of Object.entries(patch)) document.setIn([key], value);

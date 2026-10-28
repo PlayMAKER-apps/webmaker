@@ -1,9 +1,9 @@
 schema_version: '0.1'
 name: Aurora Sport Club
 short_name: Aurora
-tagline: La nostra storia, ogni stagione
-description: Notizie, squadre, calendario e risultati di Aurora Sport Club.
-language: it
+tagline: Our story, every season
+description: News, teams, schedules, and results for Aurora Sport Club.
+language: en
 timezone: Europe/Rome
 site_url: https://example.github.io/
 repository_url: ''

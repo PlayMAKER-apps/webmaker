@@ -4,19 +4,19 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { parseDocument } from 'yaml';
 import { addCompetition, addSeason, addTeam, editCompetition, editYaml, parseNews, playerSocialUrls, readCompetitionConfig, safeSlug, setCurrentSeason } from './content.ts';
 
-test('YAML conserva campi non gestiti', () => {
-  const updated = editYaml('id: marco\nname: Marco\ncustom: resta\n', { name: 'Marco D.' });
-  assert.match(updated, /custom: resta/);
+test('YAML preserves unknown fields', () => {
+  const updated = editYaml('id: marco\nname: Marco\ncustom: kept\n', { name: 'Marco D.' });
+  assert.match(updated, /custom: kept/);
   assert.match(updated, /name: Marco D\./);
 });
 
-test('notizia conserva metadati personalizzati e genera slug sicuro', () => {
-  const news = parseNews('---\ntitle: Titolo\nextra: valore\n---\nTesto');
-  assert.match(news.update({ title: 'Nuovo' }, 'Corpo'), /extra: valore/);
-  assert.equal(safeSlug('Novità Aurora 2026/27!'), 'novita-aurora-2026-27');
+test('news preserves custom metadata and creates a safe slug', () => {
+  const news = parseNews('---\ntitle: Title\nextra: value\n---\nText');
+  assert.match(news.update({ title: 'New' }, 'Body'), /extra: value/);
+  assert.equal(safeSlug('Aurora News 2026/27!'), 'aurora-news-2026-27');
 });
 
-test('i profili demo e social_urls si aprono senza bloccare lo Studio', () => {
+test('demo profiles and social_urls open without blocking Studio', () => {
   const players = new URL('../../../site/data/players/', import.meta.url);
   let profilesWithSocial = 0;
   for (const filename of readdirSync(players).filter((name) => name.endsWith('.yaml'))) {
@@ -30,38 +30,38 @@ test('i profili demo e social_urls si aprono senza bloccare lo Studio', () => {
   assert.ok(profilesWithSocial >= 0);
 });
 
-test('nuova squadra conserva le precedenti e rifiuta ID duplicati', () => {
-  const source = 'aurora:\n  name: Aurora\n  custom: resta\n';
-  const added = addTeam(source, 'nuova-squadra', 'Nuova Squadra', 'Nuova');
+test('adding a team preserves existing teams and rejects duplicate IDs', () => {
+  const source = 'aurora:\n  name: Aurora\n  custom: kept\n';
+  const added = addTeam(source, 'new-team', 'New Team', 'New');
   const value = parseDocument(added).toJS();
-  assert.equal(value.aurora.custom, 'resta');
-  assert.equal(value['nuova-squadra'].short_name, 'Nuova');
-  assert.throws(() => addTeam(added, 'nuova-squadra', 'Altra', 'Altra'), /esiste già/);
-  assert.throws(() => addTeam(source, '../bad', 'Altra', 'Altra'), /ID squadra/);
+  assert.equal(value.aurora.custom, 'kept');
+  assert.equal(value['new-team'].short_name, 'New');
+  assert.throws(() => addTeam(added, 'new-team', 'Other', 'Other'), /already exists/);
+  assert.throws(() => addTeam(source, '../bad', 'Other', 'Other'), /Team ID/);
 });
 
-test('stagioni e campionati nuovi mantengono gli ID e i campi storici', () => {
+test('new seasons and competitions preserve IDs and historical fields', () => {
   const source = readFileSync(new URL('../../../site/data/competitions.yaml', import.meta.url), 'utf8');
   const season = addSeason(source, '2027-28');
-  const added = addCompetition(season, '2027-28', 'silver', 'Lega Silver', ['aurora']);
-  const edited = editCompetition(added, '2027-28', 'silver', { name: 'Lega Silver aggiornata', win: 2, loss: 0, teams: ['aurora', 'stella'] });
+  const added = addCompetition(season, '2027-28', 'silver', 'Silver League', ['aurora']);
+  const edited = editCompetition(added, '2027-28', 'silver', { name: 'Updated Silver League', win: 2, loss: 0, teams: ['aurora', 'stella'] });
   const selected = setCurrentSeason(edited, '2027-28');
   const config = readCompetitionConfig(selected);
   assert.equal(config.current_season, '2027-28');
   assert.equal(config.seasons.find((entry) => entry.id === '2027-28')?.competitions[0].id, 'silver');
   assert.deepEqual(config.seasons.find((entry) => entry.id === '2027-28')?.competitions[0].teams, ['aurora', 'stella']);
   assert.deepEqual(config.seasons.find((entry) => entry.id === '2026-27')?.competitions[0].teams, ['aurora']);
-  assert.throws(() => addCompetition(added, '2027-28', 'silver', 'Duplicato', ['aurora']), /esiste già/);
-  assert.throws(() => addSeason(source, '2026-27'), /esiste già/);
+  assert.throws(() => addCompetition(added, '2027-28', 'silver', 'Duplicate', ['aurora']), /already exists/);
+  assert.throws(() => addSeason(source, '2026-27'), /already exists/);
 });
 
-test('modificare un campionato storico non cambia il suo ID né elimina campi extra', () => {
-  const source = 'current_season: 2025-26\nseasons:\n  - id: 2025-26\n    competitions:\n      - id: platinum\n        name: Originale\n        team: aurora\n        custom: conserva\n';
-  const edited = editCompetition(source, '2025-26', 'platinum', { name: 'Nuovo nome', teams: ['aurora'], win: 3 });
+test('editing a historical competition preserves its ID and extra fields', () => {
+  const source = 'current_season: 2025-26\nseasons:\n  - id: 2025-26\n    competitions:\n      - id: platinum\n        name: Original\n        team: aurora\n        custom: kept\n';
+  const edited = editCompetition(source, '2025-26', 'platinum', { name: 'New name', teams: ['aurora'], win: 3 });
   const competition = readCompetitionConfig(edited).seasons[0].competitions[0] as { id: string; name: string; team: string; custom: string; standings_points: { win: number } };
   assert.equal(competition.id, 'platinum');
   assert.equal(competition.team, 'aurora');
-  assert.equal(competition.custom, 'conserva');
+  assert.equal(competition.custom, 'kept');
   assert.equal(competition.standings_points.win, 3);
 });
 

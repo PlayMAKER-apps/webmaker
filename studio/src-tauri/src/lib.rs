@@ -17,5 +17,5 @@ pub fn run() {
             backup::export_backup, backup::restore_backup,
         ])
         .run(tauri::generate_context!())
-        .expect("WebMAKER Studio non si è avviato");
+        .expect("WebMAKER Studio failed to start");
 }

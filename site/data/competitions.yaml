@@ -3,6 +3,6 @@ seasons:
   - id: 2026-27
     competitions:
       - id: amatori
-        name: Lega amatoriale
+        name: Amateur League
         teams: [aurora]
         standings_points: { win: 2, loss: 0 }

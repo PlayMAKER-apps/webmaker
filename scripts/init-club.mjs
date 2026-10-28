@@ -4,9 +4,9 @@ import { fileURLToPath } from 'node:url';
 
 const source=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const target=resolve(process.argv[2]||'');
-if(!process.argv[2])throw new Error('Uso: node scripts/init-club.mjs <cartella-nuovo-club>');
-if(existsSync(target))throw new Error(`La cartella esiste già: ${target}`);
-if(target.startsWith(`${source}${sep}`)||target===source)throw new Error('Scegli una cartella esterna al sorgente WebMAKER.');
+if(!process.argv[2])throw new Error('Usage: node scripts/init-club.mjs <new-club-folder>');
+if(existsSync(target))throw new Error(`Folder already exists: ${target}`);
+if(target.startsWith(`${source}${sep}`)||target===source)throw new Error('Choose a folder outside the WebMAKER source repository.');
 mkdirSync(target,{recursive:true});
 const filter=(path)=>![/[/\\]node_modules([/\\]|$)/,/[/\\]dist([/\\]|$)/,/[/\\]\.npm-cache([/\\]|$)/].some((pattern)=>pattern.test(path));
 cpSync(join(source,'site'),join(target,'site'),{recursive:true,filter});
@@ -16,5 +16,5 @@ cpSync(join(source,'.github','workflows','deploy.yml'),join(target,'.github','wo
 cpSync(join(source,'.gitignore'),join(target,'.gitignore'));
 cpSync(join(source,'LICENSE'),join(target,'LICENSE'));
 cpSync(join(source,'NOTICE'),join(target,'NOTICE'));
-writeFileSync(join(target,'README.md'),`# Il mio sito WebMAKER\n\nModifica \`site/data/club.yaml\`, poi contenuti in \`site/data/\` e \`site/content/news/\`.\n\n\`cd site && npm ci && npm run build\` genera \`site/dist/\`.\n\nPer pubblicare: crea una repository GitHub vuota, inizializza Git in questa cartella, imposta \`repository_url\` e \`site_url\`, abilita Settings → Pages → GitHub Actions e invia il branch \`main\`.\n\nStudio è un'app desktop separata: scaricala solo da una release verificata di WebMAKER o compilala dal sorgente.\n\nVersione motore: 0.1.0. Le istanze create con questo script ricevono una copia del motore; gli aggiornamenti futuri richiedono una revisione e una PR manuale.\n`);
-console.log(`Nuova istanza creata: ${target}`);
+writeFileSync(join(target,'README.md'),`# My WebMAKER club site\n\nEdit \`site/data/club.yaml\`, then update \`site/data/\` and \`site/content/news/\`.\n\nRun \`cd site && npm ci && npm run build\` to generate \`site/dist/\`.\n\nTo publish, create an empty GitHub repository, initialize Git in this folder, set \`repository_url\`, \`site_url\`, and \`base_path\`, select Settings → Pages → GitHub Actions, and push \`main\`.\n\nStudio is a separate desktop app. Download it from a verified WebMAKER release or build it from source.\n\nGenerator version: 0.1.1. Each club receives a copy of the generator; future updates require a manual review and pull request.\n`);
+console.log(`New club instance created: ${target}`);

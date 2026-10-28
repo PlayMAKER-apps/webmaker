@@ -1,7 +1,7 @@
 [package]
 name = "webmaker-studio"
-version = "0.1.0"
-description = "Editor locale per siti WebMAKER"
+version = "0.1.1"
+description = "Local editor for WebMAKER sites"
 authors = ["PlayMAKER"]
 license = "Apache-2.0"
 edition = "2021"

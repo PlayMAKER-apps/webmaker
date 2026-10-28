@@ -1,60 +1,61 @@
-# WebMAKER 0.1.0
+# WebMAKER
 
-WebMAKER crea siti statici per associazioni sportive. Questa repository contiene il motore del sito, tre temi, WebMAKER Studio per Windows, dati demo fittizi e un inizializzatore per nuovi club. Il codice di Studio deriva dal progetto Nerone, scritto dall'autore di PlayMAKER. Il codice è distribuito con licenza Apache-2.0; conserva il file [NOTICE](NOTICE) nelle redistribuzioni. Vedi [audit e limiti](docs/migration-audit.md).
+WebMAKER creates static websites for sports clubs. This repository contains the site generator, three themes, WebMAKER Studio for Windows, fictional sample data, and an initializer for new clubs. Studio grew out of the Nerone Basket pilot, whose code was written by the PlayMAKER author. The code is licensed under Apache-2.0; retain the [NOTICE](NOTICE) file when redistributing it. See the [migration audit and current limitations](docs/migration-audit.md).
 
-![Illustrazione dei tre temi](docs/images/01-themes.svg)
+![Illustration comparing the three WebMAKER themes](docs/images/01-themes.svg)
 
-## Guida per l'uso
+## User guide
 
-### 1. Ottieni il codice e crea il tuo sito
+### 1. Clone WebMAKER and create your club site
 
-Clona [PlayMAKER-apps/webmaker](https://github.com/PlayMAKER-apps/webmaker) e crea un'istanza indipendente:
+Install Node.js 22 or newer and Git. Clone [PlayMAKER-apps/webmaker](https://github.com/PlayMAKER-apps/webmaker), then create an independent club project:
 
 ```bash
 git clone https://github.com/PlayMAKER-apps/webmaker.git
 cd webmaker
-node scripts/init-club.mjs ../mio-club
+node scripts/init-club.mjs ../my-club
 ```
 
-Il nuovo progetto contiene `site/`, `shared/` e il workflow GitHub Pages; non contiene cronologia, immagini o dati Nerone. Richiede Node.js 22 o successivo.
+The new folder contains `site/`, `shared/`, and a GitHub Pages workflow. It contains no Nerone history, images, or personal data.
 
-### 2. Personalizza il club
+### 2. Customize your club
 
-Apri `mio-club/site/data/club.yaml` e cambia nome, slogan, descrizione, email, social, lingua, timezone, colori, sport, `site_url`, `repository_url` e `base_path`. Scegli `theme: bold`, `classic` o `dynamic`: i contenuti restano identici. Sostituisci squadre, giocatori e roster in `site/data/` e gli articoli in `site/content/news/`. Usa ID stabili e file di prova prima di inserire dati reali. Copia solo immagini di cui hai i diritti in `site/public/assets/`.
+Open `my-club/site/data/club.yaml`. Set the name, tagline, description, contact details, language, time zone, colors, sport, `site_url`, `repository_url`, and `base_path`. Choose `theme: bold`, `classic`, or `dynamic`; switching themes does not duplicate or replace your content. Replace the sample teams, players, games, and rosters under `site/data/`, and the news under `site/content/news/`. Keep IDs stable after publication. Add only images you have permission to use to `site/public/assets/`.
 
-Il profilo sport si sceglie con `sport: basketball` o `football`; puoi aggiungerne uno strutturato in `shared/profiles/`. I roster mantengono `site/data/teams.yaml`, `site/data/players/*.yaml` e `site/data/rosters.csv` per l'import di TagMAKER. Le statistiche partita sono un CSV distinto dall'export eventi JSON di TagMAKER 0.1.
+Set `sport: basketball` or `football`, or add a structured profile under `shared/profiles/`. WebMAKER keeps `site/data/teams.yaml`, `site/data/players/*.yaml`, and `site/data/rosters.csv` for TagMAKER roster imports. Per-game statistics CSV files are separate from TagMAKER's event JSON export.
 
-![Schema illustrativo di WebMAKER Studio](docs/images/02-studio.svg)
+![Illustration of the WebMAKER Studio editing workflow](docs/images/02-studio.svg)
 
-Puoi usare un agente AI per personalizzare il sito: dagli `site/data/club.yaml`, i CSV/YAML demo e [lo schema](shared/site-0.1.schema.json), chiedi modifiche **solo ai contenuti o al tema**, poi controlla il diff e lancia `npm test` e `npm run build`. Non inviare dati personali, foto di minori, credenziali o contenuti non autorizzati al servizio AI. Per cambiare layout o aggiungere sport, chiedi una modifica al motore su un branch separato e verifica tutte le pagine.
+An AI coding agent can help with customization. Give it `site/data/club.yaml`, the fictional CSV/YAML examples, and the [configuration schema](shared/site-0.1.schema.json). Ask it to change content or theme settings, review its diff, then run `npm test` and `npm run build`. Keep private player information, minors' photos, credentials, and unlicensed content out of prompts. For layout changes or a new sport, work on a separate branch and check every page.
 
-### 3. Anteprima e GitHub Pages
+### 3. Preview and publish with GitHub Pages
 
 ```bash
-cd mio-club/site
+cd ../my-club/site
 npm ci
 npm test
 npm run build
 npm run dev
 ```
 
-L'anteprima locale è su `http://localhost:4173`. Per pubblicare, crea un repository GitHub vuoto per il club. Per esempio, per il repository `utente/mio-club` configura `repository_url: https://github.com/utente/mio-club.git`, `site_url: https://utente.github.io/mio-club/` e `base_path: /mio-club` in `site/data/club.yaml`. Quindi, dalla root `mio-club`:
+Open `http://localhost:4173` to preview the site. Create an empty GitHub repository for your club. For a repository named `your-account/my-club`, set `repository_url: https://github.com/your-account/my-club.git`, `site_url: https://your-account.github.io/my-club/`, and `base_path: /my-club` in `site/data/club.yaml`. Then, from the `my-club` root:
 
 ```bash
 git init -b main
 git add .
 git commit -m "Create club site"
-git remote add origin https://github.com/utente/mio-club.git
+git remote add origin https://github.com/your-account/my-club.git
 git push -u origin main
 ```
 
-In **Settings → Pages → Build and deployment** scegli **GitHub Actions**. Il workflow `.github/workflows/deploy.yml` calcola il percorso Pages del repository e pubblica soltanto la build statica; Studio non va sul server. Dopo il push attendi il workflow verde e apri l'URL pubblico. Un push riuscito non prova che il deploy sia completato.
+In **Settings → Pages → Build and deployment**, select **GitHub Actions**. The `.github/workflows/deploy.yml` workflow builds and publishes the static site. Studio is never hosted on the server. Wait for the workflow to succeed, then open the public URL. A successful Git push does not mean the site has finished deploying.
 
-![Schema illustrativo dei passaggi GitHub Pages](docs/images/03-pages.svg)
+![Illustration of the GitHub Pages publishing steps](docs/images/03-pages.svg)
 
-### 4. WebMAKER Studio per Windows
+### 4. Edit with WebMAKER Studio for Windows
 
-Scarica [WebMAKER Studio per Windows dalla release 0.1.0](https://github.com/PlayMAKER-apps/webmaker/releases/tag/v0.1.0). L'installer non è firmato digitalmente. Installa anche Git for Windows per pubblicare da Studio. Per avviare Studio da sorgente, nella cartella `studio/` installa Node.js 22+, Rust/MSVC, Visual Studio Build Tools, WebView2 e Git for Windows; poi:
+Download the [WebMAKER Studio 0.1.1 installer](https://github.com/PlayMAKER-apps/webmaker/releases/download/v0.1.1/WebMAKER.Studio_0.1.1_x64-setup.exe) or view [all releases](https://github.com/PlayMAKER-apps/webmaker/releases). The installer is unsigned. Install Git for Windows with Git Credential Manager if you want to publish from Studio. To run Studio from source, install Node.js 22+, Rust/MSVC, Visual Studio Build Tools, WebView2, and Git for Windows, then run this in `studio/`:
+
 
 ```powershell
 npm ci
@@ -63,22 +64,28 @@ npm run build
 npm run tauri dev
 ```
 
-Per costruire un installer usa `npm run tauri build`; controlla `studio/src-tauri/target/release/bundle/`. Apri in Studio la root Git di **un progetto club alla volta**. In **Club e tema** puoi cambiare nome, colori e tema; usa **Salva sul PC**, poi **Pubblica** per validare, vedere il diff e fare push. Il push è ammesso solo da `main` quando `origin` coincide esattamente con `repository_url` nel file club. L'autenticazione passa da Git Credential Manager; Studio non salva PAT. Conflitti o divergenze bloccano la pubblicazione. Lo stato del deploy va verificato in GitHub Actions.
+To build an installer, run `npm run tauri build` and check `studio/src-tauri/target/release/bundle/`. Open the Git root of **one club project at a time** in Studio. Under **Club & theme**, change the name, colors, and theme. Select **Save locally**, then **Publish** to validate, review the diff, and push. Publishing is allowed only from `main` when `origin` exactly matches `repository_url` in the club configuration. Git Credential Manager handles authentication; Studio does not store a personal access token. Remote conflicts block the push. Check GitHub Actions for the deployment result.
 
-## Per chi vuole migliorare WebMAKER
+## Attribution appreciated
 
-Apri una issue con il problema e un esempio sintetico, crea un fork/branch, modifica un'area alla volta e proponi una pull request. Per il sito esegui `cd site && npm ci && npm test && npm run build`; per Studio `cd studio && npm ci && npm test && npm run build` e `cargo test --manifest-path src-tauri/Cargo.toml`. Controlla [l'audit](docs/migration-audit.md) e il contratto [PlayMAKER](https://github.com/PlayMAKER-apps/playmaker-schema) prima di cambiare ID o formati. Le modifiche al formato richiedono una nuova versione di schema e una migrazione non distruttiva.
+If you publish a club site or post made with WebMAKER, a credit is appreciated but optional: **[WebMAKER](https://github.com/PlayMAKER-apps/webmaker) by [PlayMAKER](https://github.com/PlayMAKER-apps)**. A site footer or post description is a convenient place for it. This request does not change the Apache-2.0 license; if you redistribute WebMAKER code, retain the required [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
-Il generatore grafico Nerone non è incluso in questa versione: contiene asset e logiche di club ancora da separare. Non considerarlo una funzione disponibile in Studio. I tre **temi web** sono distinti dai template per grafiche social.
+## Contribute to WebMAKER
 
-## Struttura e stato
+Open an issue with a clear problem and a fictional example. Fork the repository, make a focused change on a branch, and send a pull request. For the site, run `cd site && npm ci && npm test && npm run build`. For Studio, run `cd studio && npm ci && npm test && npm run build` and `cargo test --manifest-path src-tauri/Cargo.toml`. Review the [migration audit](docs/migration-audit.md) and the [PlayMAKER shared schema](https://github.com/PlayMAKER-apps/playmaker-schema) before changing IDs or formats. Format changes need a new schema version and a nondestructive migration.
 
-| Cartella | Contenuto |
+Write documentation, interface text, example content, screenshots, and release notes in English so the whole PlayMAKER community can use them. Existing technical IDs and published data formats must remain stable unless a migration is provided.
+
+The Nerone social graphics generator is not included yet because its club assets and logic still need to be separated. The three **website themes** are distinct from social graphics templates.
+
+## Repository layout and limitations
+
+| Directory | Contents |
 | --- | --- |
-| `site/` | Generatore statico, dati demo, tre temi e test |
-| `studio/` | App desktop Tauri 2 + React/TypeScript |
-| `shared/` | Schema configurazione e profili sport |
-| `starter/` | Istruzioni per la copia di una nuova istanza |
-| `docs/` | Audit, limiti e illustrazioni della guida |
+| `site/` | Static generator, fictional data, three themes, and tests |
+| `studio/` | Tauri 2 + React/TypeScript desktop app |
+| `shared/` | Configuration schema and sport profiles |
+| `starter/` | Instructions for creating a club instance |
+| `docs/` | Migration audit, release notes, and guide illustrations |
 
-Il motore viene copiato in ogni repository club in questa versione. Gli aggiornamenti richiedono una revisione manuale e una pull request; i template GitHub non si sincronizzano automaticamente. Lo Studio può gestire più repository locali, uno alla volta, senza mescolare bozze o backup.
+Each club repository receives a copy of the site generator in this version. Updates require a manual review and pull request; GitHub templates do not synchronize existing projects automatically. Studio can manage multiple local club repositories, one at a time, without mixing drafts or backups.

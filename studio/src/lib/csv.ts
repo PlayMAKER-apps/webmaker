@@ -14,14 +14,14 @@ function parseFields(record: string): string[] {
     } else if (char === ',' || char === '\n' || char === '\r') {
       if (char === ',' ) { values.push(value); value = ''; closed = false; }
     } else if (char === '"') {
-      if (value || closed) throw new Error('CSV non valido: virgolette fuori posizione.');
+      if (value || closed) throw new Error('Invalid CSV: misplaced quote.');
       quoted = true;
     } else {
-      if (closed) throw new Error('CSV non valido: testo dopo le virgolette.');
+      if (closed) throw new Error('Invalid CSV: text after a closing quote.');
       value += char;
     }
   }
-  if (quoted) throw new Error('CSV non valido: virgolette non chiuse.');
+  if (quoted) throw new Error('Invalid CSV: unclosed quote.');
   values.push(value);
   return values;
 }
@@ -43,7 +43,7 @@ function records(source: string): CsvRow[] {
       start = i + 1;
     }
   }
-  if (inQuotes) throw new Error('CSV non valido: virgolette non chiuse.');
+  if (inQuotes) throw new Error('Invalid CSV: unclosed quote.');
   if (start < source.length) {
     const raw = source.slice(start);
     result.push({ values: parseFields(raw), raw, ending: '', dirty: false });
@@ -62,13 +62,13 @@ export class CsvDocument {
 
   constructor(source: string) {
     const parsed = records(source);
-    if (!parsed.length) throw new Error('CSV vuoto: intestazioni mancanti.');
+    if (!parsed.length) throw new Error('CSV is empty: headers are missing.');
     this.header = parsed[0];
     this.rows = parsed.slice(1);
     this.newline = this.header.ending || '\n';
-    if (new Set(this.header.values).size !== this.header.values.length) throw new Error('CSV con colonne duplicate.');
+    if (new Set(this.header.values).size !== this.header.values.length) throw new Error('CSV has duplicate columns.');
     for (const row of this.rows) {
-      if (row.values.length > this.header.values.length) throw new Error('CSV con più campi delle colonne dichiarate.');
+      if (row.values.length > this.header.values.length) throw new Error('CSV row has more fields than declared columns.');
       while (row.values.length < this.header.values.length) row.values.push('');
     }
   }
@@ -76,7 +76,7 @@ export class CsvDocument {
   get columns(): string[] { return this.header.values; }
   get(index: number): Record<string, string> {
     const row = this.rows[index];
-    if (!row) throw new Error('Riga inesistente.');
+    if (!row) throw new Error('Row does not exist.');
     return Object.fromEntries(this.columns.map((column, position) => [column, row.values[position]]));
   }
   update(index: number, patch: Record<string, string>) {

@@ -8,7 +8,7 @@ pub struct ValidationReport { pub errors: Vec<String>, pub warnings: Vec<String>
 
 fn yaml(path: &Path) -> Result<Value, String> {
     let text = fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
-    serde_yaml::from_str(&text).map_err(|error| format!("{}: YAML non valido: {error}", path.display()))
+    serde_yaml::from_str(&text).map_err(|error| format!("{}: Invalid YAML: {error}", path.display()))
 }
 
 fn field<'a>(value: &'a Value, key: &str) -> Option<&'a str> { value.get(key).and_then(Value::as_str) }
@@ -20,8 +20,8 @@ fn csv_rows(path: &Path) -> Result<Vec<csv::StringRecord>, String> {
     let headers = reader.headers().map_err(|error| format!("{}: {error}", path.display()))?.clone();
     let mut rows = Vec::new();
     for result in reader.records() {
-        let row = result.map_err(|error| format!("{}: CSV non valido: {error}", path.display()))?;
-        if row.len() > headers.len() { return Err(format!("{}: più campi delle colonne dichiarate.", path.display())); }
+        let row = result.map_err(|error| format!("{}: Invalid CSV: {error}", path.display()))?;
+        if row.len() > headers.len() { return Err(format!("{}: more fields than declared columns.", path.display())); }
         let mut named = csv::StringRecord::new();
         for (index, header) in headers.iter().enumerate() {
             named.push_field(header);
@@ -77,34 +77,34 @@ pub fn validate(root: &Path) -> ValidationReport {
             if let Some(seasons) = config.get("seasons").and_then(Value::as_sequence) {
                 for season in seasons {
                     let Some(season_id) = field(season, "id") else { report.errors.push("Stagione senza ID in competitions.yaml.".into()); continue; };
-                    if !season_ids.insert(season_id.to_string()) { report.errors.push(format!("Stagione duplicata: {season_id}.")); }
+                    if !season_ids.insert(season_id.to_string()) { report.errors.push(format!("Duplicate season: {season_id}.")); }
                     if season_id.len() != 7 || !season_id.chars().enumerate().all(|(index, ch)| if index == 4 { ch == '-' } else { ch.is_ascii_digit() }) {
-                        report.errors.push(format!("ID stagione non valido: {season_id}."));
+                        report.errors.push(format!("Invalid season ID: {season_id}."));
                     }
-                    let Some(competitions) = season.get("competitions").and_then(Value::as_sequence) else { report.errors.push(format!("{season_id}: elenco campionati mancante.")); continue; };
-                    if season_id == current && competitions.is_empty() { report.errors.push(format!("La stagione corrente {season_id} non ha campionati.")); }
+                    let Some(competitions) = season.get("competitions").and_then(Value::as_sequence) else { report.errors.push(format!("{season_id}: competition list is missing.")); continue; };
+                    if season_id == current && competitions.is_empty() { report.errors.push(format!("The current season {season_id} has no competitions.")); }
                     for competition in competitions {
-                        let Some(competition_id) = field(competition, "id") else { report.errors.push(format!("{season_id}: campionato senza ID.")); continue; };
+                        let Some(competition_id) = field(competition, "id") else { report.errors.push(format!("{season_id}: competition is missing an ID.")); continue; };
                         if competition_id.is_empty() || competition_id.starts_with('-') || competition_id.ends_with('-')
                             || !competition_id.chars().all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-') {
-                            report.errors.push(format!("ID campionato non valido: {competition_id}."));
+                            report.errors.push(format!("Invalid competition ID: {competition_id}."));
                         }
                         let pair = format!("{season_id}/{competition_id}");
-                        if !competition_pairs.insert(pair.clone()) { report.errors.push(format!("Campionato duplicato: {pair}.")); }
-                        if field(competition, "name").unwrap_or("").trim().is_empty() { report.errors.push(format!("{pair}: nome mancante.")); }
+                        if !competition_pairs.insert(pair.clone()) { report.errors.push(format!("Duplicate competition: {pair}.")); }
+                        if field(competition, "name").unwrap_or("").trim().is_empty() { report.errors.push(format!("{pair}: name is missing.")); }
                         if let Some(team) = field(competition, "team") { participating_teams.push((pair.clone(), team.to_string())); }
                         if let Some(ids) = competition.get("teams").and_then(Value::as_sequence) {
                             for team in ids.iter().filter_map(Value::as_str) { participating_teams.push((pair.clone(), team.to_string())); }
                         }
                         for key in ["win", "loss"] {
                             if let Some(value) = competition.get("standings_points").and_then(|points| points.get(key)) {
-                                if !value.is_null() && value.as_u64().is_none() { report.errors.push(format!("{pair}: punti {key} non validi.")); }
+                                if !value.is_null() && value.as_u64().is_none() { report.errors.push(format!("{pair}: invalid {key} points.")); }
                             }
                         }
                     }
                 }
-                if !season_ids.contains(current) { report.errors.push(format!("Stagione corrente {current} non configurata.")); }
-            } else { report.errors.push("competitions.yaml non contiene stagioni.".into()); }
+                if !season_ids.contains(current) { report.errors.push(format!("Current season {current} is not configured.")); }
+            } else { report.errors.push("competitions.yaml contains no seasons.".into()); }
         },
         Err(error) => report.errors.push(error),
     }
@@ -112,14 +112,14 @@ pub fn validate(root: &Path) -> ValidationReport {
         Ok(value) => value.as_mapping().map(|map| map.keys().filter_map(Value::as_str).map(str::to_string).collect::<HashSet<_>>()).unwrap_or_default(),
         Err(error) => { report.errors.push(error); HashSet::new() }
     };
-    if teams.is_empty() { report.errors.push("teams.yaml non contiene squadre.".into()); }
-    for (pair, team) in participating_teams { if !teams.contains(&team) { report.errors.push(format!("{pair}: squadra partecipante sconosciuta {team}.")); } }
+    if teams.is_empty() { report.errors.push("teams.yaml contains no teams.".into()); }
+    for (pair, team) in participating_teams { if !teams.contains(&team) { report.errors.push(format!("{pair}: unknown participating team {team}.")); } }
     let mut players = HashSet::new();
     for path in data_files(root, "site/data/players", "yaml") {
         match yaml(&path) {
             Ok(value) => match field(&value, "id") {
-                Some(id) if !id.is_empty() => { if !players.insert(id.to_string()) { report.errors.push(format!("ID giocatore duplicato: {id}")); } },
-                _ => report.errors.push(format!("{}: ID giocatore mancante.", path.display())),
+                Some(id) if !id.is_empty() => { if !players.insert(id.to_string()) { report.errors.push(format!("Duplicate player ID: {id}")); } },
+                _ => report.errors.push(format!("{}: player ID is missing.", path.display())),
             },
             Err(error) => report.errors.push(error),
         }
@@ -129,26 +129,26 @@ pub fn validate(root: &Path) -> ValidationReport {
     for path in data_files(root, "site/data/games", "csv") {
         let relative = path.strip_prefix(root.join("site/data/games")).unwrap_or(&path);
         let pair = relative.to_string_lossy().replace('\\', "/").trim_end_matches(".csv").to_string();
-        if !competition_pairs.contains(&pair) { report.warnings.push(format!("{}: archivio non incluso nella configurazione campionati.", path.display())); }
+        if !competition_pairs.contains(&pair) { report.warnings.push(format!("{}: archive is not listed in the competition configuration.", path.display())); }
         match csv_rows(&path) {
             Ok(rows) => for row in rows {
                 let id = get(&row, "id");
-                if id.is_empty() { report.errors.push(format!("{}: partita senza ID.", path.display())); continue; }
-                if !games.insert(id.to_string()) { report.errors.push(format!("ID partita duplicato: {id}")); }
+                if id.is_empty() { report.errors.push(format!("{}: game is missing an ID.", path.display())); continue; }
+                if !games.insert(id.to_string()) { report.errors.push(format!("Duplicate game ID: {id}")); }
                 let home = get(&row, "home_team"); let away = get(&row, "away_team");
-                if !teams.contains(home) || !teams.contains(away) { report.errors.push(format!("{id}: ID squadra non presente in teams.yaml.")); }
-                if home == away { report.errors.push(format!("{id}: le due squadre coincidono.")); }
-                if get(&row, "date").is_empty() { report.warnings.push(format!("{id}: data storica non disponibile.")); }
-                else if !valid_date(get(&row, "date")) { report.errors.push(format!("{id}: data non valida; usare AAAA-MM-GG.")); }
-                if !valid_time(get(&row, "time")) { report.errors.push(format!("{id}: ora non valida; usare HH:MM.")); }
+                if !teams.contains(home) || !teams.contains(away) { report.errors.push(format!("{id}: team ID is missing from teams.yaml.")); }
+                if home == away { report.errors.push(format!("{id}: the two teams are the same.")); }
+                if get(&row, "date").is_empty() { report.warnings.push(format!("{id}: historical date is unavailable.")); }
+                else if !valid_date(get(&row, "date")) { report.errors.push(format!("{id}: invalid date; use YYYY-MM-DD.")); }
+                if !valid_time(get(&row, "time")) { report.errors.push(format!("{id}: invalid time; use HH:MM.")); }
                 let status = get(&row, "status");
-                if !["scheduled", "played", "final"].contains(&status) { report.errors.push(format!("{id}: stato sconosciuto {status}.")); }
+                if !["scheduled", "played", "final"].contains(&status) { report.errors.push(format!("{id}: unknown status {status}.")); }
                 if status == "final" && (get(&row, "home_score").is_empty() || get(&row, "away_score").is_empty()) {
-                    report.errors.push(format!("{id}: risultato finale incompleto."));
+                    report.errors.push(format!("{id}: incomplete final score."));
                 }
                 for key in ["home_score", "away_score"] {
                     let score = get(&row, key);
-                    if !score.is_empty() && score.parse::<u32>().is_err() { report.errors.push(format!("{id}: {key} deve essere un intero non negativo.")); }
+                    if !score.is_empty() && score.parse::<u32>().is_err() { report.errors.push(format!("{id}: {key} must be a nonnegative integer.")); }
                 }
                 report.games += 1;
             },
@@ -159,11 +159,11 @@ pub fn validate(root: &Path) -> ValidationReport {
         Ok(rows) => for row in rows {
             let player = get(&row, "player_id"); let team = get(&row, "team_id");
             let pair = format!("{}/{}", get(&row, "season"), get(&row, "competition"));
-            if !competition_pairs.contains(&pair) { report.errors.push(format!("Roster {player}: stagione/campionato {pair} non configurati.")); }
-            if !players.contains(player) { report.errors.push(format!("Roster: giocatore sconosciuto {player}.")); }
-            if !teams.contains(team) { report.errors.push(format!("Roster: squadra sconosciuta {team}.")); }
+            if !competition_pairs.contains(&pair) { report.errors.push(format!("Roster {player}: season/competition {pair} is not configured.")); }
+            if !players.contains(player) { report.errors.push(format!("Roster: unknown player {player}.")); }
+            if !teams.contains(team) { report.errors.push(format!("Roster: unknown team {team}.")); }
             let number = get(&row, "number");
-            if !number.is_empty() && number.parse::<u16>().is_err() { report.errors.push(format!("Roster {player}: numero non valido.")); }
+            if !number.is_empty() && number.parse::<u16>().is_err() { report.errors.push(format!("Roster {player}: invalid jersey number.")); }
         },
         Err(error) => report.errors.push(error),
     }
@@ -171,18 +171,18 @@ pub fn validate(root: &Path) -> ValidationReport {
         match csv_rows(&path) {
             Ok(rows) => for row in rows {
                 let game = get(&row, "game_id"); let player = get(&row, "player_id");
-                if !games.contains(game) { report.errors.push(format!("Statistiche: partita sconosciuta {game}.")); }
-                if !players.contains(player) { report.errors.push(format!("Statistiche: giocatore sconosciuto {player}.")); }
+                if !games.contains(game) { report.errors.push(format!("Statistics: unknown game {game}.")); }
+                if !players.contains(player) { report.errors.push(format!("Statistics: unknown player {player}.")); }
                 let minutes = get(&row, "minutes");
                 if !minutes.is_empty() {
                     let parts: Vec<_> = minutes.split(':').collect();
                     if parts.len() != 2 || parts[1].len() != 2 || parts[0].parse::<u32>().is_err() || !parts[1].parse::<u32>().is_ok_and(|seconds| seconds < 60) {
-                        report.errors.push(format!("Statistiche {game}/{player}: minuti non validi (MM:SS)."));
+                        report.errors.push(format!("Statistics {game}/{player}: invalid minutes (MM:SS)."));
                     }
                 }
                 for key in ["points", "three_pointers_made", "two_pointers_made", "free_throws_made", "fouls", "rebounds_off", "rebounds_def", "assists", "turnovers"] {
                     let value = get(&row, key);
-                    if !value.is_empty() && value.parse::<u32>().is_err() { report.errors.push(format!("Statistiche {game}/{player}: {key} non valido.")); }
+                    if !value.is_empty() && value.parse::<u32>().is_err() { report.errors.push(format!("Statistics {game}/{player}: invalid {key}.")); }
                 }
             },
             Err(error) => report.errors.push(error),
@@ -191,22 +191,22 @@ pub fn validate(root: &Path) -> ValidationReport {
     for path in data_files(root, "site/content/news", "md") {
         let source = match fs::read_to_string(&path) { Ok(text) => text, Err(error) => { report.errors.push(format!("{}: {error}", path.display())); continue; } };
         let normalized = source.replace("\r\n", "\n");
-        let Some(rest) = normalized.strip_prefix("---\n") else { report.errors.push(format!("{}: front matter mancante.", path.display())); continue; };
-        let Some((front, _body)) = rest.split_once("\n---\n") else { report.errors.push(format!("{}: front matter incompleto.", path.display())); continue; };
+        let Some(rest) = normalized.strip_prefix("---\n") else { report.errors.push(format!("{}: front matter is missing.", path.display())); continue; };
+        let Some((front, _body)) = rest.split_once("\n---\n") else { report.errors.push(format!("{}: front matter is incomplete.", path.display())); continue; };
         match serde_yaml::from_str::<Value>(front) {
             Ok(value) => {
-                if field(&value, "title").unwrap_or("").is_empty() { report.errors.push(format!("{}: titolo mancante.", path.display())); }
+                if field(&value, "title").unwrap_or("").is_empty() { report.errors.push(format!("{}: title is missing.", path.display())); }
                 for key in ["players", "games"] {
                     if let Some(items) = value.get(key).and_then(Value::as_sequence) {
                         for item in items.iter().filter_map(Value::as_str) {
-                            if key == "players" && !players.contains(item) { report.errors.push(format!("{}: giocatore collegato sconosciuto {item}.", path.display())); }
-                            if key == "games" && !games.contains(item) { report.errors.push(format!("{}: partita collegata sconosciuta {item}.", path.display())); }
+                            if key == "players" && !players.contains(item) { report.errors.push(format!("{}: unknown linked player {item}.", path.display())); }
+                            if key == "games" && !games.contains(item) { report.errors.push(format!("{}: unknown linked game {item}.", path.display())); }
                         }
                     }
                 }
                 report.news += 1;
             },
-            Err(error) => report.errors.push(format!("{}: YAML non valido: {error}", path.display())),
+            Err(error) => report.errors.push(format!("{}: Invalid YAML: {error}", path.display())),
         }
     }
     report
@@ -239,13 +239,13 @@ mod tests {
         let temp = std::env::temp_dir().join(format!("webmaker-config-{}", Uuid::new_v4()));
         fs::create_dir_all(temp.join("site/data")).unwrap();
         let root = temp.canonicalize().unwrap();
-        fs::write(root.join("site/data/teams.yaml"), "nerone:\n  name: Nerone\n").unwrap();
+        fs::write(root.join("site/data/teams.yaml"), "aurora:\n  name: Aurora\n").unwrap();
         fs::write(root.join("site/data/rosters.csv"), "season,competition,team_id,player_id,number\n").unwrap();
-        fs::write(root.join("site/data/competitions.yaml"), "current_season: 2028-29\nseasons:\n  - id: 2027-28\n    competitions:\n      - id: gold\n        name: Gold\n        teams: [sconosciuta]\n      - id: gold\n        name: Doppio\n").unwrap();
+        fs::write(root.join("site/data/competitions.yaml"), "current_season: 2028-29\nseasons:\n  - id: 2027-28\n    competitions:\n      - id: gold\n        name: Gold\n        teams: [unknown-team]\n      - id: gold\n        name: Duplicate\n").unwrap();
         let report = validate(&root);
-        assert!(report.errors.iter().any(|error| error.contains("Campionato duplicato")));
-        assert!(report.errors.iter().any(|error| error.contains("Stagione corrente")));
-        assert!(report.errors.iter().any(|error| error.contains("squadra partecipante sconosciuta")));
+        assert!(report.errors.iter().any(|error| error.contains("Duplicate competition")));
+        assert!(report.errors.iter().any(|error| error.contains("Current season")));
+        assert!(report.errors.iter().any(|error| error.contains("unknown participating team")));
         assert!(root.starts_with(std::env::temp_dir().canonicalize().unwrap()));
         fs::remove_dir_all(root).unwrap();
     }

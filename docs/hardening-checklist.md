@@ -9,6 +9,7 @@ This branch keeps the WebMAKER 0.1 site data and TagMAKER roster CSV/YAML paths 
 - `cd studio && npm ci && npm test && npm run build` checks Studio's TypeScript content adapters and UI build.
 - `cargo test --locked --manifest-path studio/src-tauri/Cargo.toml` checks native save, validation, publication preview, Git branch/remote conflicts, and no staging or push during preview.
 - CI runs these checks and `npm audit --audit-level=high` for both Node projects, plus `cargo audit` for Rust dependencies. The weekly run catches advisories published after a PR merges.
+- The first audit found `zip` 2.6.1 advisories RUSTSEC-2026-0367, RUSTSEC-2026-0368, and RUSTSEC-2026-0369. Studio now uses `zip` 9 and handles its fallible entry-name API; the CI audit must remain green.
 
 Browser snapshots record stable DOM and layout facts; PNGs in the CI report support visual review. They do not prove pixel-perfect rendering across operating systems or replace manual accessibility testing.
 

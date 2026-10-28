@@ -56,8 +56,8 @@ pub fn restore_backup(path: String, overwrite: bool, state: tauri::State<'_, Pro
     let mut entries = Vec::new();
     for index in 0..zip.len() {
         let entry = zip.by_index(index).map_err(|error| error.to_string())?;
-        if entry.name() == "manifest.json" { continue; }
-        let name = entry.name().to_string();
+        let name = entry.name().map_err(|error| format!("Invalid backup entry name: {error}"))?.into_owned();
+        if name == "manifest.json" { continue; }
         if !backup_path(&name, manifest.include_media) { return Err(format!("File is not allowed in the backup: {name}")); }
         relative_path(&root, &name)?;
         if entry.size() > 16 * 1024 * 1024 { return Err(format!("File is too large for the backup: {name}")); }

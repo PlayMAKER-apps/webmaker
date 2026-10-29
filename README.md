@@ -6,21 +6,17 @@ WebMAKER creates static websites for sports clubs. This repository contains the 
 
 ## User guide
 
-### 1. Clone WebMAKER and create your club site
+### 1. Create your club with Studio 0.2
 
-Install Node.js 22 or newer and Git. Clone [PlayMAKER-apps/webmaker](https://github.com/PlayMAKER-apps/webmaker), then create an independent club project:
+Select **Create a new club** on the Studio home screen. Enter the club name, short name, sport, theme, first season, and destination. Studio creates an independent project from its bundled starter, removes the fictional sample identity, initializes a clean `main` branch, and opens the project automatically.
 
-```bash
-git clone https://github.com/PlayMAKER-apps/webmaker.git
-cd webmaker
-node scripts/init-club.mjs ../my-club
-```
+To publish during setup, select **Create and publish a GitHub repository**, connect through the Git Credential Manager browser flow, and choose a GitHub user or organization plus a new repository name. Studio creates a public repository, pushes the complete starter, enables the GitHub Pages workflow, and reports the expected site URL. The credential stays in the operating-system credential store and is never written into the club repository.
 
-The new folder contains `site/`, `shared/`, and a GitHub Pages workflow. It contains no Nerone history, images, or personal data.
+Use **Clone from GitHub** for a WebMAKER club that is not on this computer, or **Open existing project** for an already-cloned repository. See the [complete Create Club guide](docs/create-club.md). Studio 0.1.1 remains the current public installer until 0.2 is released and does not contain this wizard.
 
 ### 2. Customize your club
 
-Open `my-club/site/data/club.yaml`. Set the name, tagline, description, contact details, language, time zone, colors, sport, `site_url`, `repository_url`, and `base_path`. Choose `theme: bold`, `classic`, or `dynamic`; switching themes does not duplicate or replace your content. Replace the sample teams, players, games, and rosters under `site/data/`, and the news under `site/content/news/`. Keep IDs stable after publication. Add only images you have permission to use to `site/public/assets/`.
+Use **Club & theme** in Studio or open `site/data/club.yaml`. Set the name, tagline, description, contact details, language, time zone, colors, sport, `site_url`, `repository_url`, and `base_path`. Choose `theme: bold`, `classic`, or `dynamic`; switching themes does not duplicate or replace your content. Add teams, players, games, rosters, and news through Studio or their files under `site/data/` and `site/content/news/`. Keep IDs stable after publication. Add only images you have permission to use to `site/public/assets/`.
 
 Set `sport: basketball` or `football`, or add a structured profile under `shared/profiles/`. WebMAKER keeps `site/data/teams.yaml`, `site/data/players/*.yaml`, and `site/data/rosters.csv` for TagMAKER roster imports. Per-game statistics CSV files are separate from TagMAKER's event JSON export.
 
@@ -38,23 +34,23 @@ npm run build
 npm run dev
 ```
 
-Open `http://localhost:4173` to preview the site. Create an empty GitHub repository for your club. For a repository named `your-account/my-club`, set `repository_url: https://github.com/your-account/my-club.git`, `site_url: https://your-account.github.io/my-club/`, and `base_path: /my-club` in `site/data/club.yaml`. Then, from the `my-club` root:
+Open `http://localhost:4173` to preview the site. When Create Club publishes during setup, the repository URL, Pages URL, base path, initial commit, remote, push, and Pages configuration are prepared automatically. Continue using Studio's guarded **Publish** screen for later content changes.
+
+For source-based setup without the Studio wizard, clone WebMAKER and run the initializer:
 
 ```bash
-git init -b main
-git add .
-git commit -m "Create club site"
-git remote add origin https://github.com/your-account/my-club.git
-git push -u origin main
+git clone https://github.com/PlayMAKER-apps/webmaker.git
+cd webmaker
+node scripts/init-club.mjs ../my-club
 ```
 
-In **Settings → Pages → Build and deployment**, select **GitHub Actions**. The `.github/workflows/deploy.yml` workflow builds and publishes the static site. Studio is never hosted on the server. Wait for the workflow to succeed, then open the public URL. A successful Git push does not mean the site has finished deploying.
+The source workflow still requires creating the remote, configuring `repository_url`, `site_url`, and `base_path`, pushing `main`, and selecting GitHub Actions in **Settings → Pages**. The `.github/workflows/deploy.yml` workflow builds and publishes the static site. Studio is never hosted on the server. Wait for the workflow to succeed, then open the public URL. A successful Git push does not mean the site has finished deploying.
 
 ![Illustration of the GitHub Pages publishing steps](docs/images/03-pages.svg)
 
 ### 4. Edit with WebMAKER Studio for Windows
 
-Download the [WebMAKER Studio 0.1.1 installer](https://github.com/PlayMAKER-apps/webmaker/releases/download/v0.1.1/WebMAKER.Studio_0.1.1_x64-setup.exe) or view [all releases](https://github.com/PlayMAKER-apps/webmaker/releases). The installer is unsigned. Install Git for Windows with Git Credential Manager if you want to publish from Studio. To run Studio from source, install Node.js 22+, Rust/MSVC, Visual Studio Build Tools, WebView2, and Git for Windows, then run this in `studio/`:
+The [WebMAKER Studio 0.1.1 installer](https://github.com/PlayMAKER-apps/webmaker/releases/download/v0.1.1/WebMAKER.Studio_0.1.1_x64-setup.exe) remains the stable download while Studio 0.2 is reviewed. View [all releases](https://github.com/PlayMAKER-apps/webmaker/releases). Install Git for Windows with Git Credential Manager for Create Club, clone, synchronization, and publishing. To run Studio 0.2 from source, install Node.js 22+, Rust/MSVC, Visual Studio Build Tools, WebView2, and Git for Windows, then run this in `studio/`:
 
 
 ```powershell

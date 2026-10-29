@@ -3,7 +3,7 @@ use serde::Serialize;
 use std::{fs::{self, OpenOptions}, path::{Component, Path, PathBuf}, process::Command, sync::Mutex};
 use uuid::Uuid;
 
-fn normalize_remote(remote: &str) -> Option<String> {
+pub fn normalized_github_remote(remote: &str) -> Option<String> {
     let value = remote.trim().trim_end_matches('/').trim_end_matches(".git");
     let path = value.strip_prefix("https://github.com/")
         .or_else(|| value.strip_prefix("git@github.com:"))
@@ -20,12 +20,12 @@ pub fn configured_remote(root: &Path, remote: &str) -> bool {
     let Ok(source) = fs::read_to_string(root.join("site/data/club.yaml")) else { return false; };
     let Ok(club) = serde_yaml::from_str::<serde_yaml::Value>(&source) else { return false; };
     let Some(expected) = club.get("repository_url").and_then(serde_yaml::Value::as_str) else { return false; };
-    match (normalize_remote(expected), normalize_remote(remote)) { (Some(a), Some(b)) => a == b, _ => false }
+    match (normalized_github_remote(expected), normalized_github_remote(remote)) { (Some(a), Some(b)) => a == b, _ => false }
 }
 
 pub fn club_urls(root: &Path) -> Result<(String, String), String> {
     let club: serde_yaml::Value = serde_yaml::from_str(&fs::read_to_string(root.join("site/data/club.yaml")).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
-    let repo = club.get("repository_url").and_then(serde_yaml::Value::as_str).and_then(normalize_remote).ok_or("Set repository_url in site/data/club.yaml")?;
+    let repo = club.get("repository_url").and_then(serde_yaml::Value::as_str).and_then(normalized_github_remote).ok_or("Set repository_url in site/data/club.yaml")?;
     let site = club.get("site_url").and_then(serde_yaml::Value::as_str).filter(|s| s.starts_with("https://")).ok_or("Set an HTTPS site_url in site/data/club.yaml")?;
     Ok((repo, site.to_string()))
 }
@@ -230,8 +230,8 @@ mod tests {
     fn accepts_only_configured_remote() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().unwrap();
         assert!(!configured_remote(&root, "https://github.com/another/site.git"));
-        assert_eq!(normalize_remote("git@github.com:example/site.git"), Some("https://github.com/example/site".into()));
-        assert!(normalize_remote("https://evil.example/a/b").is_none());
+        assert_eq!(normalized_github_remote("git@github.com:example/site.git"), Some("https://github.com/example/site".into()));
+        assert!(normalized_github_remote("https://evil.example/a/b").is_none());
     }
     #[test]
     fn rejects_traversal_and_absolute_paths() {

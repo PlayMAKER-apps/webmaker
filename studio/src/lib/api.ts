@@ -7,6 +7,10 @@ export type ValidationReport = { errors: string[]; warnings: string[]; games: nu
 export type PublicationPreview = { branch: string; remote: string; files: string[]; diff: string; errors: string[]; canPublish: boolean; ahead: number | null; behind: number | null };
 export type PublicationResult = { commit: string; commitUrl: string; actionsUrl: string; siteUrl: string; deployStatus: string };
 export type BackupResult = { written: number; skipped: string[] };
+export type GithubAccount = { login: string; name: string };
+export type GithubTarget = { account: string; owner: string; repository: string };
+export type CreateClubRequest = { parent: string; folderName: string; clubName: string; shortName: string; sport: 'basketball' | 'football'; theme: 'bold' | 'classic' | 'dynamic'; season: string; github: GithubTarget | null };
+export type CreateClubResult = { project: ProjectInfo; repositoryUrl: string; siteUrl: string; pagesConfigured: boolean; warnings: string[] };
 
 export async function call<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
   try { return await invoke<T>(command, args); }

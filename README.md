@@ -12,7 +12,7 @@ Select **Create a new club** on the Studio home screen. Enter the club name, sho
 
 To publish during setup, select **Create and publish a GitHub repository**, connect through the Git Credential Manager browser flow, and choose a GitHub user or organization plus a new repository name. Studio creates a public repository, pushes the complete starter, enables the GitHub Pages workflow, and reports the expected site URL. The credential stays in the operating-system credential store and is never written into the club repository.
 
-Use **Clone from GitHub** for a WebMAKER club that is not on this computer, or **Open existing project** for an already-cloned repository. See the [complete Create Club guide](docs/create-club.md). Studio 0.1.1 remains the current public installer until 0.2 is released and does not contain this wizard.
+Use **Clone from GitHub** for a WebMAKER club that is not on this computer, or **Open existing project** for an already-cloned repository. See the [complete Create Club guide](docs/create-club.md).
 
 ### 2. Customize your club
 
@@ -50,7 +50,7 @@ The source workflow still requires creating the remote, configuring `repository_
 
 ### 4. Edit with WebMAKER Studio for Windows
 
-The [WebMAKER Studio 0.1.1 installer](https://github.com/PlayMAKER-apps/webmaker/releases/download/v0.1.1/WebMAKER.Studio_0.1.1_x64-setup.exe) remains the stable download while Studio 0.2 is reviewed. View [all releases](https://github.com/PlayMAKER-apps/webmaker/releases). Install Git for Windows with Git Credential Manager for Create Club, clone, synchronization, and publishing. To run Studio 0.2 from source, install Node.js 22+, Rust/MSVC, Visual Studio Build Tools, WebView2, and Git for Windows, then run this in `studio/`:
+Download the [WebMAKER Studio 0.2.0 installer](https://github.com/PlayMAKER-apps/webmaker/releases/download/v0.2.0/WebMAKER.Studio_0.2.0_x64-setup.exe) or view [all releases](https://github.com/PlayMAKER-apps/webmaker/releases). Install Git for Windows with Git Credential Manager for Create Club, clone, synchronization, and publishing. To run Studio 0.2 from source, install Node.js 22+, Rust/MSVC, Visual Studio Build Tools, WebView2, and Git for Windows, then run this in `studio/`:
 
 
 ```powershell

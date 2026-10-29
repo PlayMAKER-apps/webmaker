@@ -1,4 +1,4 @@
-# WebMAKER Studio 0.2.0 — draft release notes
+# WebMAKER Studio 0.2.0
 
 ## Highlights
 
@@ -24,3 +24,12 @@
 - Native tests for clean creation, validation, Git initialization, URL rules, and overwrite protection.
 - Generated-club `npm test` and static build using blank roster, game, and statistics archives.
 - Windows NSIS and MSI bundle builds with the embedded starter.
+
+## Windows downloads
+
+- `WebMAKER.Studio_0.2.0_x64-setup.exe`: NSIS installer for Windows x64.
+- `WebMAKER.Studio_0.2.0_x64_en-US.msi`: alternative MSI installer for Windows x64.
+
+SHA-256: EXE `243D6646BB9E020E4F544F98D434EBB1569F36B8F3AD987B09714A3B95B210E5`; MSI `EBB017CFEBBABDF7F8BBC2371BFC3DA69DAF4FFD655DDFB9B189E2CA7AFA430A`.
+
+The installers are unsigned. Install Git for Windows with Git Credential Manager to create, clone, synchronize, and publish GitHub projects from Studio.

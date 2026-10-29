@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { open, save as saveDialog } from '@tauri-apps/plugin-dialog';
 import { marked } from 'marked';
 import { parseDocument } from 'yaml';
-import { call, type BackupResult, type Catalog, type Draft, type ProjectInfo, type PublicationPreview, type PublicationResult, type ValidationReport } from './lib/api';
+import { call, type BackupResult, type Catalog, type CreateClubRequest, type CreateClubResult, type Draft, type GithubAccount, type ProjectInfo, type PublicationPreview, type PublicationResult, type ValidationReport } from './lib/api';
 import { CsvDocument } from './lib/csv';
 import { addCompetition, addSeason, addTeam, editCompetition, editYaml, parseNews, playerSocialUrls, readCompetitionConfig, safeSlug, setCurrentSeason } from './lib/content';
 
 type Section = 'dashboard' | 'branding' | 'games' | 'teams' | 'competitions' | 'players' | 'rosters' | 'stats' | 'news' | 'media' | 'backup' | 'publish';
+type SetupMode = 'create' | 'clone' | null;
 const sections: { id: Section; label: string; group: string }[] = [
   { id: 'dashboard', label: 'Overview', group: 'Studio' },
   { id: 'branding', label: 'Club & theme', group: 'Studio' },
@@ -78,6 +79,20 @@ export function App() {
   const [mediaPath, setMediaPath] = useState('');
   const [mediaPreview, setMediaPreview] = useState('');
   const [newTitle, setNewTitle] = useState('');
+  const [setupMode, setSetupMode] = useState<SetupMode>(null);
+  const [setupParent, setSetupParent] = useState('');
+  const [clubName, setClubName] = useState('');
+  const [clubShortName, setClubShortName] = useState('');
+  const [clubFolder, setClubFolder] = useState('');
+  const [clubSport, setClubSport] = useState<'basketball' | 'football'>('basketball');
+  const [clubTheme, setClubTheme] = useState<'bold' | 'classic' | 'dynamic'>('bold');
+  const [clubSeason, setClubSeason] = useState(() => { const year = new Date().getFullYear(); return `${year}-${String(year + 1).slice(-2)}`; });
+  const [publishNewClub, setPublishNewClub] = useState(false);
+  const [githubAccount, setGithubAccount] = useState<GithubAccount | null>(null);
+  const [githubOwner, setGithubOwner] = useState('');
+  const [githubRepository, setGithubRepository] = useState('');
+  const [cloneUrl, setCloneUrl] = useState('');
+  const [cloneFolder, setCloneFolder] = useState('');
   const history = useRef<string[]>([]);
   const dirty = Boolean(file) && content !== savedContent;
 
@@ -133,6 +148,45 @@ export function App() {
       setSection('dashboard'); setFile('');
       setPublishFiles(loaded.changedFiles.filter((path) => path.startsWith('site/data/') || path.startsWith('site/content/news/') || path.startsWith('site/public/assets/')));
     }, 'Local project opened. Changes are saved on your computer first.');
+  }
+  async function chooseSetupParent() {
+    const chosen = await open({ directory: true, multiple: false, title: 'Choose where to save the club project' });
+    if (typeof chosen === 'string') setSetupParent(chosen);
+  }
+  function applyClubName(value: string) {
+    setClubName(value);
+    if (!clubShortName || clubShortName === clubName) setClubShortName(value);
+    const slug = safeSlug(value);
+    if (!clubFolder || clubFolder === safeSlug(clubName)) setClubFolder(slug);
+    if (!githubRepository || githubRepository === safeSlug(clubName)) setGithubRepository(slug);
+  }
+  async function connectGithub() {
+    await run(async () => {
+      const account = await call<GithubAccount>('connect_github');
+      setGithubAccount(account); setGithubOwner(account.login);
+      setNotice(`Connected to GitHub as ${account.login}. The credential remains in Git Credential Manager.`);
+    });
+  }
+  async function createClub() {
+    const request: CreateClubRequest = {
+      parent: setupParent, folderName: clubFolder, clubName, shortName: clubShortName, sport: clubSport, theme: clubTheme, season: clubSeason,
+      github: publishNewClub && githubAccount ? { account: githubAccount.login, owner: githubOwner, repository: githubRepository } : null,
+    };
+    await run(async () => {
+      const result = await call<CreateClubResult>('create_club', { request });
+      setProject(result.project); setCatalog(await call<Catalog>('catalog')); setSetupMode(null); setSection('dashboard');
+      setPublishFiles([]);
+      const publication = result.repositoryUrl ? result.pagesConfigured ? ` Repository created and Pages configured: ${result.siteUrl}` : ' The repository was created; check the warning below before publishing.' : '';
+      setNotice(`Club project created at ${result.project.root}.${publication}${result.warnings.length ? `\n${result.warnings.join('\n')}` : ''}`);
+    });
+  }
+  async function cloneClub() {
+    await run(async () => {
+      const loaded = await call<ProjectInfo>('clone_club', { request: { parent: setupParent, remoteUrl: cloneUrl, folderName: cloneFolder } });
+      setProject(loaded); setCatalog(await call<Catalog>('catalog')); setSetupMode(null); setSection('dashboard');
+      setPublishFiles(loaded.changedFiles.filter((path) => path.startsWith('site/data/') || path.startsWith('site/content/news/') || path.startsWith('site/public/assets/')));
+      setNotice(`Club cloned and opened at ${loaded.root}.`);
+    });
   }
   async function loadFile(relative: string) {
     if (!relative || !await preserveDraft()) return;
@@ -332,14 +386,39 @@ export function App() {
         {(index === 0 || item.group !== sections[index - 1].group) && <p className="nav-group">{item.group}</p>}
         <button type="button" className={section === item.id ? 'active' : ''} onClick={() => void go(item.id)} disabled={!project && item.id !== 'dashboard'}>{item.label}{item.id === 'publish' && project?.changedFiles.length ? <b>{project.changedFiles.length}</b> : null}</button>
       </div>)}</nav>
-      <div className="sidebar-bottom"><span>v0.1.1 · local desktop app</span><span>Ctrl+S to save</span></div>
+      <div className="sidebar-bottom"><span>v0.2.0 · local desktop app</span><span>Ctrl+S to save</span></div>
     </aside>
     <main className="workspace">
       <header className="workspace-top"><div><span className="eyebrow">WebMAKER Studio</span><h1>{sections.find((item) => item.id === section)?.label}</h1></div><div className="top-actions"><span className="local-badge">{dirty ? 'Unapplied draft' : 'Local data'}</span>{file && <><button className="button subtle" onClick={undo} disabled={!history.current.length}>Undo</button><button className="button primary" onClick={() => void saveFile()} disabled={!dirty || busy}>Save locally</button></>}</div></header>
       <ErrorNotice text={error} /><Notice text={notice} />
       {section === 'dashboard' && <div className="dashboard">
-        <div className="hero-panel"><span className="eyebrow">Your club workspace</span><h2>CONTENT<br /><em>UNDER CONTROL.</em></h2><p>Games, rosters, statistics, and news stay as files in the repository. Drafts are saved on your computer; publishing is a separate step you can verify.</p><button className="button primary" onClick={() => void openProject()}>Open local project</button></div>
-        {project ? <><div className="metric-grid"><div><small>BRANCH</small><strong>{project.branch}</strong></div><div><small>CHANGED FILES</small><strong>{project.changedFiles.length}</strong></div><div><small>LAST SYNC</small><strong className="metric-small">{formatTime(project.lastSync)}</strong></div></div><div className="panel"><div className="panel-heading"><h3>Local copy status</h3><div className="button-row"><button className="text-action" onClick={() => void run(refreshProject)}>Refresh status</button><button className="text-action" onClick={() => void run(async () => { setProject(await call<ProjectInfo>('sync_project')); }, 'Synchronization complete.')}>Sync from GitHub</button></div></div><p><b>Folder:</b> {project.root}</p><p><b>Origin:</b> {project.remote}</p><div className="file-tags">{project.changedFiles.length ? project.changedFiles.map((path) => <code key={path}>{path}</code>) : <span>No local changes.</span>}</div></div></> : <div className="panel"><h3>Get started</h3><p>Select the folder containing <code>.git</code> and <code>site/</code>. Studio opens WebMAKER projects with club.yaml. Configure the remote before publishing.</p></div>}
+        <div className="hero-panel"><span className="eyebrow">Your club workspace</span><h2>CONTENT<br /><em>UNDER CONTROL.</em></h2><p>Games, rosters, statistics, and news stay as files in the repository. Create a first club here, clone one from GitHub, or open an existing local project.</p><div className="button-row"><button className="button primary" onClick={() => setSetupMode('create')}>Create a new club</button><button className="button subtle" onClick={() => setSetupMode('clone')}>Clone from GitHub</button><button className="button subtle" onClick={() => void openProject()}>Open existing project</button></div></div>
+        {!project && setupMode === 'create' && <div className="panel setup-panel">
+          <div className="panel-heading"><div><span className="eyebrow">Guided setup</span><h2>Create a new club</h2></div><button className="text-action" onClick={() => setSetupMode(null)}>Cancel</button></div>
+          <p>Studio creates an independent WebMAKER project with no sample-club identity, initializes a clean <code>main</code> branch, and can publish the first version to a new public GitHub repository.</p>
+          <div className="form-grid">
+            <label><span>Club name</span><input value={clubName} onChange={(event) => applyClubName(event.target.value)} placeholder="North Stars Sports Club" /></label>
+            <label><span>Short name</span><input value={clubShortName} onChange={(event) => setClubShortName(event.target.value)} placeholder="North Stars" /></label>
+            <label><span>Sport</span><select value={clubSport} onChange={(event) => setClubSport(event.target.value as 'basketball' | 'football')}><option value="basketball">Basketball</option><option value="football">Football</option></select></label>
+            <label><span>Theme</span><select value={clubTheme} onChange={(event) => setClubTheme(event.target.value as 'bold' | 'classic' | 'dynamic')}><option value="bold">Bold · sporty</option><option value="classic">Classic · institutional</option><option value="dynamic">Dynamic · magazine</option></select></label>
+            <label><span>First season</span><input value={clubSeason} onChange={(event) => setClubSeason(event.target.value)} placeholder="2026-27" /></label>
+            <label><span>Folder name</span><input value={clubFolder} onChange={(event) => setClubFolder(safeSlug(event.target.value))} placeholder="north-stars" /></label>
+            <label className="wide"><span>Save inside</span><div className="path-picker"><input value={setupParent} readOnly placeholder="Choose a parent folder" /><button className="button subtle" onClick={() => void chooseSetupParent()}>Choose folder</button></div></label>
+          </div>
+          <label className="setup-choice"><input type="checkbox" checked={publishNewClub} onChange={(event) => setPublishNewClub(event.target.checked)} /><span><strong>Create and publish a GitHub repository</strong><small>The repository will be public so it can use GitHub Pages. Studio never writes your credential into the project.</small></span></label>
+          {publishNewClub && <div className="github-setup">
+            {githubAccount ? <div className="validation good"><strong>Connected as {githubAccount.login}</strong><p>Authentication is managed by Git Credential Manager.</p></div> : <div><p>Sign in through the GitHub browser window. Git for Windows and Git Credential Manager are required by this Studio release.</p><button className="button subtle" onClick={() => void connectGithub()}>Connect GitHub</button></div>}
+            <div className="form-grid"><label><span>Repository owner</span><input value={githubOwner} onChange={(event) => setGithubOwner(event.target.value)} placeholder="GitHub user or organization" /></label><label><span>Repository name</span><input value={githubRepository} onChange={(event) => setGithubRepository(event.target.value)} placeholder="north-stars" /></label></div>
+          </div>}
+          <div className="setup-submit"><p className="hint">Nothing is overwritten. If the destination already exists, Studio stops and asks you to open it instead.</p><button className="button primary" disabled={busy || !setupParent || !clubName.trim() || !clubShortName.trim() || !clubFolder || (publishNewClub && (!githubAccount || !githubOwner || !githubRepository))} onClick={() => void createClub()}>Create club</button></div>
+        </div>}
+        {!project && setupMode === 'clone' && <div className="panel setup-panel">
+          <div className="panel-heading"><div><span className="eyebrow">Existing repository</span><h2>Clone a WebMAKER club</h2></div><button className="text-action" onClick={() => setSetupMode(null)}>Cancel</button></div>
+          <p>Use this when the club already has a WebMAKER repository on GitHub. Private repositories use the account stored in Git Credential Manager.</p>
+          <div className="form-grid"><label className="wide"><span>GitHub repository URL</span><input value={cloneUrl} onChange={(event) => { setCloneUrl(event.target.value); const name = event.target.value.split('/').pop()?.replace(/\.git$/i, '') ?? ''; if (!cloneFolder) setCloneFolder(safeSlug(name)); }} placeholder="https://github.com/owner/club-site" /></label><label><span>Local folder name</span><input value={cloneFolder} onChange={(event) => setCloneFolder(safeSlug(event.target.value))} placeholder="club-site" /></label><label><span>Save inside</span><div className="path-picker"><input value={setupParent} readOnly placeholder="Choose a parent folder" /><button className="button subtle" onClick={() => void chooseSetupParent()}>Choose folder</button></div></label></div>
+          <button className="button primary" disabled={busy || !setupParent || !cloneUrl || !cloneFolder} onClick={() => void cloneClub()}>Clone and open</button>
+        </div>}
+        {project ? <><div className="metric-grid"><div><small>BRANCH</small><strong>{project.branch}</strong></div><div><small>CHANGED FILES</small><strong>{project.changedFiles.length}</strong></div><div><small>LAST SYNC</small><strong className="metric-small">{formatTime(project.lastSync)}</strong></div></div><div className="panel"><div className="panel-heading"><h3>Local copy status</h3><div className="button-row"><button className="text-action" onClick={() => void run(refreshProject)}>Refresh status</button><button className="text-action" onClick={() => void run(async () => { setProject(await call<ProjectInfo>('sync_project')); }, 'Synchronization complete.')}>Sync from GitHub</button></div></div><p><b>Folder:</b> {project.root}</p><p><b>Origin:</b> {project.remote || 'Local only — connect a GitHub repository when you are ready.'}</p><div className="file-tags">{project.changedFiles.length ? project.changedFiles.map((path) => <code key={path}>{path}</code>) : <span>No local changes.</span>}</div></div></> : !setupMode && <div className="panel"><h3>Choose how to start</h3><p><strong>Create a new club</strong> is the guided route for a first website. <strong>Clone from GitHub</strong> downloads an existing club. <strong>Open existing project</strong> keeps working for repositories already on this computer.</p></div>}
         <div className="panel"><h3>Site preview</h3><p>Studio shows the data you are editing. To see the complete site, run <code>cd site; npm run build; npm run dev</code> in the project.</p></div>
         <div className="panel"><h3>Attribution appreciated</h3><p>If you publish a site or post made with WebMAKER, a credit in the footer or description is appreciated but optional: <a href="https://github.com/PlayMAKER-apps/webmaker" target="_blank" rel="noreferrer">WebMAKER</a> by <a href="https://github.com/PlayMAKER-apps" target="_blank" rel="noreferrer">PlayMAKER</a>.</p></div>
       </div>}

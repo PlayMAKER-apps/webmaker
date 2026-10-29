@@ -74,6 +74,8 @@ If you publish a club site or post made with WebMAKER, a credit is appreciated b
 
 Open an issue with a clear problem and a fictional example. Fork the repository, make a focused change on a branch, and send a pull request. For the site, run `cd site && npm ci && npm test && npm run build`. For Studio, run `cd studio && npm ci && npm test && npm run build` and `cargo test --manifest-path src-tauri/Cargo.toml`. Review the [migration audit](docs/migration-audit.md) and the [PlayMAKER shared schema](https://github.com/PlayMAKER-apps/playmaker-schema) before changing IDs or formats. Format changes need a new schema version and a nondestructive migration.
 
+The [hardening checklist](docs/hardening-checklist.md) explains browser snapshots, CI audits, and checks that still require a person.
+
 Write documentation, interface text, example content, screenshots, and release notes in English so the whole PlayMAKER community can use them. Existing technical IDs and published data formats must remain stable unless a migration is provided.
 
 The Nerone social graphics generator is not included yet because its club assets and logic still need to be separated. The three **website themes** are distinct from social graphics templates.

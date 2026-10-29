@@ -1,0 +1,6 @@
+{
+  "canonical": "https://example.github.io/competition/2026-27/amatori/",
+  "heading": "Amateur League",
+  "documentOverflow": false,
+  "tableScrollable": true
+}

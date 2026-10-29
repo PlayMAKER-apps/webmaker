@@ -117,11 +117,14 @@ mod tests {
     }
     #[test]
     fn development_branch_can_preview_game_diff_but_cannot_push() {
-        let temp = std::env::temp_dir().join(format!("webmaker-test-{}", Uuid::new_v4()));
+        let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("target/test-fixtures");
+        fs::create_dir_all(&fixtures).unwrap();
+        let temp = fixtures.join(format!("webmaker-test-{}", Uuid::new_v4()));
         let folders = ["site/data/games/2026-27", "site/data/player-stats/2026-27", "site/data/players", "site/content/news", "site/scripts"];
         for folder in folders { fs::create_dir_all(temp.join(folder)).unwrap(); }
-        let fixture: [(&str, &str); 7] = [
-            ("site/data/competitions.yaml", "seasons:\n  - id: 2026-27\n    competitions:\n      - id: platinum\n"),
+        let fixture: [(&str, &str); 8] = [
+            ("site/data/club.yaml", "repository_url: https://github.com/aurora-sport/club-site.git\n"),
+            ("site/data/competitions.yaml", "current_season: 2026-27\nseasons:\n  - id: 2026-27\n    competitions:\n      - id: platinum\n        name: Platinum\n        teams: [aurora]\n"),
             ("site/data/teams.yaml", "aurora:\n  name: Aurora\nrivals:\n  name: Rivals\n"),
             ("site/data/players/player.yaml", "id: player\nname: Player\n"),
             ("site/data/rosters.csv", "season,competition,team_id,player_id,number\n2026-27,platinum,aurora,player,5\n"),
@@ -140,15 +143,40 @@ mod tests {
         git(&root, &["commit", "-m", "Fixture"]).unwrap();
         let head = git(&root, &["rev-parse", "HEAD"]).unwrap();
         git(&root, &["update-ref", "refs/remotes/origin/main", &head]).unwrap();
-        git(&root, &["switch", "-c", "feat/test-studio"]).unwrap();
         fs::write(root.join("site/data/games/2026-27/platinum.csv"), "id,date,time,status,home_team,away_team,home_score,away_score\ngame-1,2026-10-21,21:00,final,aurora,rivals,52,48\n").unwrap();
+        fs::write(root.join("site/data/rosters.csv"), "season,competition,team_id,player_id,number\n2026-27,platinum,aurora,player,7\n").unwrap();
+        fs::write(root.join("site/content/news/sample.md"), "---\ntitle: Updated sample\ndate: 2026-10-21\n---\nNew text\n").unwrap();
+        let report = validate(&root);
+        assert!(report.errors.is_empty(), "{:?}", report.errors);
+        assert_eq!(report.games, 1);
+        assert_eq!(report.news, 1);
+        let selection = vec!["site/data/games/2026-27/platinum.csv".into(), "site/data/rosters.csv".into(), "site/content/news/sample.md".into()];
+        let clean_preview = preview_for_root(&root, selection.clone()).unwrap();
+        assert!(clean_preview.can_publish, "{:?}", clean_preview.errors);
+        assert_eq!(clean_preview.files.len(), 3);
+        assert_eq!(git(&root, &["rev-parse", "HEAD"]).unwrap(), head);
+        assert!(git(&root, &["diff", "--cached", "--name-only"]).unwrap().is_empty());
+
+        git(&root, &["remote", "set-url", "origin", "https://github.com/other/club.git"]).unwrap();
+        let mismatched = preview_for_root(&root, selection.clone()).unwrap();
+        assert!(!mismatched.can_publish);
+        assert!(mismatched.errors.iter().any(|message| message.contains("Origin does not match")));
+        git(&root, &["remote", "set-url", "origin", "https://github.com/aurora-sport/club-site.git"]).unwrap();
+
+        git(&root, &["add", "--", "site/data/rosters.csv"]).unwrap();
+        git(&root, &["commit", "-m", "Local roster change"]).unwrap();
+        let ahead = preview_for_root(&root, vec!["site/data/games/2026-27/platinum.csv".into()]).unwrap();
+        assert!(!ahead.can_publish);
+        assert!(ahead.errors.iter().any(|message| message.contains("commits ahead")));
+        git(&root, &["switch", "-c", "feat/test-studio"]).unwrap();
         let preview = preview_for_root(&root, vec!["site/data/games/2026-27/platinum.csv".into()]).unwrap();
         assert!(!preview.can_publish);
         assert!(preview.errors.iter().any(|message| message.contains("branch")));
         assert!(preview.diff.contains("+game-1,2026-10-21,21:00,final,aurora,rivals,52,48"));
-        let temp_root = std::env::temp_dir().canonicalize().unwrap();
+        let temp_root = fixtures.canonicalize().unwrap();
         let target: PathBuf = root.canonicalize().unwrap();
         assert!(target.starts_with(temp_root));
-        fs::remove_dir_all(target).unwrap();
+        // A sandbox may protect newly created .git directories from test cleanup.
+        let _ = fs::remove_dir_all(target);
     }
 }

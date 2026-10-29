@@ -6,6 +6,8 @@ site/dist/
 studio/dist/
 studio/src-tauri/target/
 studio/src-tauri/gen/
+site/playwright-report/
+site/test-results/
 *.tsbuildinfo
 .DS_Store
 desktop.ini
